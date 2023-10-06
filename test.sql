@@ -54,7 +54,7 @@ CREATE TABLE ChiTietHoaDon(
     PRIMARY KEY (MaHD, MaSach)
 )
 
--- Insert Data for NhaXuatBan:
+-- Insert Data into NhaXuatBan:
 insert into NhaXuatBan(MaNXB,TenNXB,DiaChiNXB,LienHe) values ('NXB_KD',N'NXB Kim Đồng',N'248 Cống Quỳnh, P. Phạm Ngũ Lão, Q.1 TP. Hồ Chí Minh','info@nxbkimdong.com.vn')											
 insert into NhaXuatBan(MaNXB,TenNXB,DiaChiNXB,LienHe) values ('NXB_T',N'NXB Trẻ',N'161B Lý Chính Thắng, phường Võ Thị Sáu, Quận 3, TP. Hồ Chí Minh','hopthubandoc@nxbtre.com.vn ')											
 insert into NhaXuatBan(MaNXB,TenNXB,DiaChiNXB,LienHe) values ('NXB_PNVN',N'NXB Phụ nữ VN',N'39 Hàng Chuối, Quận Hai Bà Trưng, Hà Nội ','truyenthongvaprnxbpn@gmail.com')											
@@ -65,7 +65,7 @@ insert into NhaXuatBan(MaNXB,TenNXB,DiaChiNXB,LienHe) values ('NXB_TH',N'NXB T�
 insert into NhaXuatBan(MaNXB,TenNXB,DiaChiNXB,LienHe) values ('NXB_DT',N'NXB Dân Trí',N'Số 9, ngõ 26, phố Hoàng Cầu, phường Ô Chợ Dừa, quận Đống Đa, Hà Nội','nxbdantri@gmail.com')											
 insert into NhaXuatBan(MaNXB,TenNXB,DiaChiNXB,LienHe) values ('NXB_TG',N'NXB Thế Giới',N'46 Trần Hưng Đạo Str., Hà Nội, Việt Nam','thegioi@hn.vnn.vn')											
 
--- Insert Data for TacGia:
+-- Insert Data into TacGia:
 DELETE FROM TacGia
 insert into TacGia(MaTG,MaNXB,TenTG,LienHe) values ('TG_VT','NXB_TH',N'Vãn Tình','902201833')											
 insert into TacGia(MaTG,MaNXB,TenTG,LienHe) values ('TG_KG','NXB_TG',N' Katrina Goldsaito ','2587024666')											
@@ -89,7 +89,7 @@ insert into TacGia(MaTG,MaNXB,TenTG,LienHe) values ('TG_CG','NXB_PNVN',N'Camilla
 insert into TacGia(MaTG,MaNXB,TenTG,LienHe) values ('TG_NQM','NXB_PNVN',N'Nguyễn Quang Minh','9725136621')																					
 insert into TacGia(MaTG,MaNXB,TenTG,LienHe) values ('TG_KL','NXB_DT',N'Kent Lineback','5268156222')											
 
--- Insert Data for Sach:
+-- Insert Data into Sach:
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('1','TG_MA','NXB_KD',N'Những ngày thứ ba với thầy Morrie','65','52000','Văn học nước ngoài')											
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('2','TG_JL','NXB_KD',N'Thế giới tương lai - Nuôi nhân loại','50','60200','Khoa học')											
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('3','TG_TH','NXB_KD',N'Dế Mèn phiêu lưu ký','125','35000','Văn học Việt Nam')											
@@ -118,7 +118,7 @@ insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('26'
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('27','TG_KG','NXB_TG',N'Âm thanh của sự im lặng','27','98000','Kinh dị')											
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('28','TG_CM','NXB_TG',N'Thiên tài bên trái, kẻ điên bên phải','46','123000','Tâm lý')											
 
--- Insert Data for PhieuNhap:
+-- Insert Data into PhieuNhap:
 insert into PhieuNhap(MaPhieuNhap,MaNXB,NgayNhap) values ('PN01','NXB_KD','2023-08-05 00:00:00')					
 insert into PhieuNhap(MaPhieuNhap,MaNXB,NgayNhap) values ('PN02','NXB_T','2023-08-05 00:00:00')					
 insert into PhieuNhap(MaPhieuNhap,MaNXB,NgayNhap) values ('PN03','NXB_PNVN','2023-08-10 00:00:00')					
@@ -129,7 +129,35 @@ insert into PhieuNhap(MaPhieuNhap,MaNXB,NgayNhap) values ('PN07','NXB_TH','2023-
 insert into PhieuNhap(MaPhieuNhap,MaNXB,NgayNhap) values ('PN08','NXB_DT','2023-08-20 00:00:00')					
 insert into PhieuNhap(MaPhieuNhap,MaNXB,NgayNhap) values ('PN09','NXB_TG','2023-08-20 00:00:00')					
 
--- Insert Data for HoaDon:
+-- Insert Data into ChiTietPhieuNhap:
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN01','1','20')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN01','2','30')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN01','3','70')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN01','4','80')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN02','5','20')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN02','6','100')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN02','7','90')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN02','8','40')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN02','9','45')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN03','10','30')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN03','11','15')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN04','12','75')									
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN05','14','125')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN05','15','40')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN05','16','50')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN06','17','55')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN06','18','30')									
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN07','20','20')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN07','21','20')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN07','22','45')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN07','23','35')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN08','24','145')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN09','25','80')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN09','26','35')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN09','27','15')					
+insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN09','28','20')						
+
+-- Insert Data into HoaDon:
 insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD01',null,'2023-09-02 00:00:00')						
 insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD02',null,'2023-09-02 00:00:00')						
 insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD03',null,'2023-09-02 00:00:00')						
@@ -142,7 +170,7 @@ insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD09',null,'2023-09-04 00:00:0
 insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD10',null,'2023-09-05 00:00:00')						
 insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD11',null,'2023-09-05 00:00:00')						
 
--- Insert Data for ChiTietHoaDon:
+-- Insert Data into ChiTietHoaDon:
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD01','1','15','780000')					
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD01','2','20','1204000')					
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD01','3','40','1400000')					
@@ -170,11 +198,3 @@ insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD10','25','30','
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD10','26','25','2250000')					
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD11','27','15','1470000')					
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD11','28','15','1845000')					
-
--- Sach(MaSach, #MaTG, #MaNXB, TenSach, SoLuongSach, Gia, TheLoai)
--- TacGia(MaTG, #MaNXB, TenTG, LienHe)
--- NhaXuatBan(MaNXB, TenNXB, DiaChiNXB, LienHe)
--- PhieuNhap(MaPhieuNhap, #MaNXB, NgayNhap)
--- ChiTietPhieuNhap(MaPhieuNhap, MaSach, SoLuongNhap
--- HoaDon(MaHD, TongHD, NgayInHD)
--- ChiTietHoaDon(MaHD, MaSach, SoLuongBan, Gia))
