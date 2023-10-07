@@ -216,6 +216,9 @@ select Month(NgayInHD) [Tháng], Year(NgayInHD) [Năm], sum(TongHD) [Doanh Thu N
 go
 
 -- View xuat tong doanh thu theo nam
-create view DNam as
+create view DTNam as
 select Year(NgayInHD) [Năm], sum(TongHD) [Doanh Thu Ngày] from HoaDon group by Year(NgayInHD)
 go
+
+-- View xem so luong sach da ban trong ngay 
+
