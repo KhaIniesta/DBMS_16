@@ -202,27 +202,3 @@ insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD10','25','30','
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD10','26','25','2250000')					
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD11','27','15','1470000')					
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD11','28','15','1845000')					
-
-
---Insert data TongHD trong bang HoaDon tinh tu bang ChiTietHoaDon
-update HoaDon
-set TongHD = (select sum(Gia) tonggia from ChiTietHoaDon where HoaDon.MaHD = ChiTietHoaDon.MaHD group by ChiTietHoaDon.MaHD)
-go
-
--- View xuat tong doanh thu theo ngay
-create view DTNgay as
-select Day(NgayInHD) [Ngày], Month(NgayInHD) [Tháng], Year(NgayInHD) [Năm], sum(TongHD) [Doanh Thu Ngày] from HoaDon group by Day(NgayInHD),Month(NgayInHD), Year(NgayInHD)
-go
-
--- View xuat tong doanh thu theo thang
-create view DTThang as
-select Month(NgayInHD) [Tháng], Year(NgayInHD) [Năm], sum(TongHD) [Doanh Thu Ngày] from HoaDon group by Month(NgayInHD), Year(NgayInHD)
-go
-
--- View xuat tong doanh thu theo nam
-create view DTNam as
-select Year(NgayInHD) [Năm], sum(TongHD) [Doanh Thu Ngày] from HoaDon group by Year(NgayInHD)
-go
-
--- View xem so luong sach da ban trong ngay 
-
