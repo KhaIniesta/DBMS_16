@@ -211,17 +211,17 @@ go
 
 -- View xuat tong doanh thu theo ngay
 create view DTNgay as
-select Day(NgayInHD) [Ngày], Month(NgayInHD) [Tháng], Year(NgayInHD) [Năm], sum(TongHD) [Doanh Thu Ngày] from HoaDon group by Day(NgayInHD),Month(NgayInHD), Year(NgayInHD)
+select Day(NgayInHD) Ngay, Month(NgayInHD) Thang, Year(NgayInHD) Nam, sum(TongHD) DoanhThuNgay from HoaDon group by Day(NgayInHD),Month(NgayInHD), Year(NgayInHD)
 go
 
 -- View xuat tong doanh thu theo thang
 create view DTThang as
-select Month(NgayInHD) [Tháng], Year(NgayInHD) [Năm], sum(TongHD) [Doanh Thu Ngày] from HoaDon group by Month(NgayInHD), Year(NgayInHD)
+select Month(NgayInHD) Thang, Year(NgayInHD) Nam, sum(TongHD) DoanhThuThang from HoaDon group by Month(NgayInHD), Year(NgayInHD)
 go
 
 -- View xuat tong doanh thu theo nam
 create view DTNam as
-select Year(NgayInHD) [Năm], sum(TongHD) [Doanh Thu Ngày] from HoaDon group by Year(NgayInHD)
+select Year(NgayInHD) Nam, sum(TongHD) DoanhThuNam from HoaDon group by Year(NgayInHD)
 go
 
 -- View xem so luong sach da ban trong ngay 
