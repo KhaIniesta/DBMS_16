@@ -26,3 +26,17 @@ insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('25'
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('26','TG_LT','NXB_TG',N'To be a Woman Doctor in Vietnam','60','90000','Tâm lý')											
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('27','TG_KG','NXB_TG',N'Âm thanh của sự im lặng','27','98000','Kinh dị')											
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('28','TG_CM','NXB_TG',N'Thiên tài bên trái, kẻ điên bên phải','46','123000','Tâm lý')											
+
+-- Kiểm tra thông tin sách lúc nhập kho có bị trùng không, nếu trùng thì tăng số lượng sách trong bảng sách
+GO
+CREATE TRIGGER Trigger_UpdateSoLuongSach
+ON ChiTietPhieuNhap
+AFTER INSERT
+AS
+BEGIN
+    -- Kiểm tra và cập nhật số lượng sách
+    UPDATE Sach
+    SET SoLuongSach = Sach.SoLuongSach + i.SoLuongNhap
+    FROM Sach
+    INNER JOIN inserted i ON Sach.MaSach = i.MaSach;
+END
