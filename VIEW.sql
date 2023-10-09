@@ -223,20 +223,28 @@ SELECT pn.MaNXB, pn.NgayNhap, ctpn.MaSach, ctpn.SoLuongNhap
 FROM PhieuNhap pn INNER JOIN ChiTietPhieuNhap ctpn ON pn.MaPhieuNhap = ctpn.MaPhieuNhap
 GO
 
-
--- Trigger kiểm tra số lượng sách trong kho có đủ bán hay không
+-- Trigger kiểm tra số lượng từng loại sách trong kho có đủ để bán hay không?
 CREATE TRIGGER TG_KTSachTrongKho
-ON Sach
-FOR INSERT, UPDATE
+ON ChiTietHoaDon
+AFTER INSERT, UPDATE
 AS
 BEGIN 
-	DECLARE @SoLuongBan INT, @SoLuongNhap INT;
+	DECLARE @SoLuongBan INT, @SoLuongNhap INT,@SoLuongTon INT;
+	--Tính tổng số lượng sách đã bán
+	SELECT	@SoLuongBan = SoLuongBan 
+	FROM ChiTietHoaDon;
+	
+	--Tính tổng số lượng sách đã nhập
+	SELECT @SoLuongNhap = SoLuongNhap 
+	FROM ChiTietPhieuNhap;
+	
+	--Tính tổng số lượng sách tồn kho
+	SET @SoLuongTon = @SoLuongNhap - @SoLuongBan;
 
-	SELECT	@SoLuongBan = SUM(SoLuongBan) FROM ChiTietHoaDon;
-	SELECT @SoLuongNhap = SUM(SoLuongNhap) FROM ChiTietPhieuNhap;
-	IF @SoLuongBan > @SoLuongNhap
+	-- Kiểm tra số lượng sách tồn kho có đủ để bán hay không
+	IF @SoLuongTon < 0
 	BEGIN
 		RAISERROR('Số lượng sách trong kho không đủ để bán ', 16, 1);
-		ROLLBACK TRANSACTION;
+		ROLLBACK TRANSACTION;	
 	END
 END;
