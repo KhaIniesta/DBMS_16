@@ -230,18 +230,18 @@ AFTER INSERT, UPDATE
 AS
 BEGIN 
 	DECLARE @SoLuongBan INT, @SoLuongNhap INT,@SoLuongTon INT;
-	--Tính tổng số lượng sách đã bán
+	-- Số lượng từng loại sách đã bán
 	SELECT	@SoLuongBan = SoLuongBan 
 	FROM ChiTietHoaDon;
 	
-	--Tính tổng số lượng sách đã nhập
+	-- Số lượng từng loại sách đã nhập
 	SELECT @SoLuongNhap = SoLuongNhap 
 	FROM ChiTietPhieuNhap;
 	
-	--Tính tổng số lượng sách tồn kho
+	--Tính số lượng từng loại sách tồn kho
 	SET @SoLuongTon = @SoLuongNhap - @SoLuongBan;
 
-	-- Kiểm tra số lượng sách tồn kho có đủ để bán hay không
+	-- Kiểm tra số lượng từng loại sách tồn kho có đủ để bán hay không
 	IF @SoLuongTon < 0
 	BEGIN
 		RAISERROR('Số lượng sách trong kho không đủ để bán ', 16, 1);
