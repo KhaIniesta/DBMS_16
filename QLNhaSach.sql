@@ -42,7 +42,7 @@ CREATE TABLE ChiTietPhieuNhap(
 
 CREATE TABLE HoaDon(
     MaHD NCHAR(15) PRIMARY KEY, 
-    TongHD MONEY CHECK( TongHD >= 0), 
+    TongHD MONEY CHECK( TongHD >= 0) default 0, 
     NgayInHD DATETIME NOT NULL
 )
 
@@ -124,6 +124,25 @@ begin
 	set SoLuongSach = SoLuongSach - (select SoLuongBan from inserted where MaSach = Sach.MaSach)
 	+ (select SoLuongBan from deleted where MaSach = Sach.MaSach)
 	from Sach join deleted on Sach.MaSach = deleted.MaSach
+end;
+go
+----7. Trigger cập nhật tổng hóa đơn trong bảng hóa đơn 
+-- 7.a Cập nhật lại tổng hóa đơn sau khi thêm sp (thêm giá) vào chi tiết hóa đơn
+create trigger TinhTongHoaDonKhiThem on ChiTietHoaDon
+after update as
+begin
+	update HoaDon
+	set TongHD = TongHD + (select sum(Gia) from inserted where MaHD = HoaDon.MaHD)
+	from HoaDon join inserted on HoaDon.MaHD = inserted.MaHD
+end;
+go
+-- 7.b Cập nhật lại tổng hóa đơn sau khi xóa sp ra khỏi chi tiết hóa đơn
+create trigger TinhTongHoaDonKhiXoa on ChiTietHoaDon
+after delete as
+begin
+	update HoaDon
+	set TongHD = TongHD - (select sum(Gia) from deleted where MaHD = HoaDon.MaHD)
+	from HoaDon join deleted on HoaDon.MaHD = deleted.MaHD
 end;
 go
 
@@ -236,17 +255,17 @@ insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN09','27'
 insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN09','28','20')					
 
 -- Insert Data into HoaDon:
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD01',null,'2023-09-02 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD02',null,'2023-09-02 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD03',null,'2023-09-02 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD04',null,'2023-09-03 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD05',null,'2023-09-03 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD06',null,'2023-09-03 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD07',null,'2023-09-04 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD08',null,'2023-09-04 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD09',null,'2023-09-04 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD10',null,'2023-09-05 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD11',null,'2023-09-05 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD01','2023-09-02 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD02','2023-09-02 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD03','2023-09-02 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD04','2023-09-03 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD05','2023-09-03 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD06','2023-09-03 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD07','2023-09-04 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD08','2023-09-04 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD09','2023-09-04 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD10','2023-09-05 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD11','2023-09-05 00:00:00')					
 
 -- Insert Data into ChiTietHoaDon:
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD01','1','15','780000')					
