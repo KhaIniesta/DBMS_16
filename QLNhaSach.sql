@@ -91,6 +91,42 @@ BEGIN
         ROLLBACK;
     END
 END
+
+--5. Trigger cap nhat so luong sach sau khi dat hang - xuat hoa don 
+
+-- 5.a Sau khi đặt hàng - xuất hóa đơn
+--Cong thuc tinh sl con lai: soluongsach = soluongsach - soluongban + soluonghuy
+go
+create trigger SoLuongSauDatHang on ChiTietHoaDon
+after insert as
+begin
+	update Sach
+	set SoLuongSach = SoLuongSach - (select SoLuongBan from inserted where MaSach = Sach.MaSach)
+	from Sach join inserted on Sach.MaSach = inserted.MaSach
+end;
+go
+
+-- 5.b Sau khi xóa hoặc hủy đơn hàng - xóa khỏi danh sách hóa đơn
+create trigger SoLuongSauXoaDatHang on ChiTietHoaDon
+for delete as
+begin
+	update Sach
+	set SoLuongSach = SoLuongSach + (select SoLuongBan from deleted where MaSach = Sach.MaSach)
+	from Sach join deleted on Sach.MaSach = deleted.MaSach
+end;
+go
+
+-- 5.c Sau khi cập nhật lại số lượng sách trong hóa đơn
+create trigger SoLuongSauCapNhat on ChiTietHoaDon
+after update as
+begin
+	update Sach
+	set SoLuongSach = SoLuongSach - (select SoLuongBan from inserted where MaSach = Sach.MaSach)
+	+ (select SoLuongBan from deleted where MaSach = Sach.MaSach)
+	from Sach join deleted on Sach.MaSach = deleted.MaSach
+end;
+go
+
 -- PHẦN INSERT DATA:==========================================================================
 
 -- Insert Data into NhaXuatBan:
@@ -241,3 +277,25 @@ insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD10','25','30','
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD10','26','25','2250000')					
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD11','27','15','1470000')					
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD11','28','15','1845000')					
+
+-- PHẦN VIEW =================================================================================
+-- 4.a View xuat tong doanh thu theo ngay
+go
+create view DTNgay as
+select Day(NgayInHD) Ngay, Month(NgayInHD) Thang, Year(NgayInHD) Nam, sum(TongHD) DoanhThuNgay from HoaDon group by Day(NgayInHD),Month(NgayInHD), Year(NgayInHD)
+
+-- 4.b View xuat tong doanh thu theo thang
+go
+create view DTThang as
+select Month(NgayInHD) Thang, Year(NgayInHD) Nam, sum(TongHD) DoanhThuThang from HoaDon group by Month(NgayInHD), Year(NgayInHD)
+
+-- 4.c View xuat tong doanh thu theo nam
+go
+create view DTNam as
+select Year(NgayInHD) Nam, sum(TongHD) DoanhThuNam from HoaDon group by Year(NgayInHD)
+
+-- 5. View xem so luong sach da ban trong ngay 
+go
+create view SoLuongSachBanTrongNgay as
+select ChiTietHoaDon.MaSach,sum(SoLuongBan) TongSoLuongBan from HoaDon join ChiTietHoaDon on HoaDon.MaHD = ChiTietHoaDon.MaHD 
+where (select cast(NgayInHD as date) ngayInHD from HoaDon) = cast(GetDate() as date) group by ChiTietHoaDon.MaSach
