@@ -50,7 +50,7 @@ CREATE TABLE ChiTietHoaDon(
     MaHD NCHAR(15) REFERENCES HoaDon(MaHD), 
     MaSach NCHAR(10) REFERENCES Sach(MaSach), 
     SoLuongBan INT CHECK (SoLuongBan > 0), 
-    Gia MONEY NOT NULL,
+    Gia MONEY NOT NULL DEFAULT 0,
     PRIMARY KEY (MaHD, MaSach)
 )
 
@@ -109,7 +109,7 @@ BEGIN
 	FROM ChiTietPhieuNhap;
 	
 	--Tính số lượng từng loại sách tồn kho
-	SET @SoLuongTon = @SoLuongNhap - @SoLuongBan;
+	SET @SoLuongTon = @SoLuongTon + @SoLuongNhap - @SoLuongBan;
 
 	-- Kiểm tra số lượng từng loại sách tồn kho có đủ để bán hay không
 	IF @SoLuongTon < 0
@@ -117,50 +117,6 @@ BEGIN
 		RAISERROR('Số lượng sách trong kho không đủ để bán ', 16, 1);
 		ROLLBACK TRANSACTION;	
 	END
-END;
-
---3. Tạo trigger xác nhận trước khi xóa sách 
-GO
-CREATE TRIGGER DeleteSach
-ON Sach 
-FOR DELETE
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    IF (SELECT COUNT(*) FROM deleted) > 0
-    BEGIN
-        DECLARE @userResponse CHAR(1);
-        SET @userResponse = 'n';
-
-        SELECT @userResponse = LOWER(SUBSTRING(CONVERT(VARCHAR,'YES', 1), 1, 1));
-
-        IF @userResponse <> 'y'
-        BEGIN
-            ROLLBACK TRANSACTION;
-        END;
-    END;
-END;
-
---4. Tạo trigger xác nhận trước khi sửa Thông tin sách
-GO 
-CREATE TRIGGER UpdateSach
-ON Sach
-FOR UPDATE
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    IF (SELECT COUNT(*) FROM deleted) > 0
-    BEGIN
-        DECLARE @userResponse NVARCHAR(1);
-		SET @userResponse = 'n';
-        SELECT @userResponse = LOWER(SUBSTRING(CONVERT(VARCHAR,'NO', 1), 1, 1));
-        IF @userResponse <> 'y'
-        BEGIN
-            ROLLBACK TRANSACTION;
-        END;
-    END;
 END;
 
 --5. Trigger cap nhat so luong sach sau khi dat hang - xuat hoa don 
@@ -358,34 +314,35 @@ insert into HoaDon(MaHD,NgayInHD) values ('HD10','2023-09-05 00:00:00')
 insert into HoaDon(MaHD,NgayInHD) values ('HD11','2023-09-05 00:00:00')						
 
 -- Insert Data into ChiTietHoaDon:
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD01','1','15','780000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD01','2','20','1204000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD01','3','40','1400000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD01','4','30','1260000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD02','5','20','660000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD02','6','80','6400000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD02','7','35','1575000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD02','8','40','4600000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD02','9','30','3000000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD03','10','30','960000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD03','11','10','500000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD04','12','20','1840000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD04','13','30','3422500')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD05','14','85','10667500')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD05','15','40','2400000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD05','16','40','3440000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD06','17','50','10200000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD06','18','30','1896000')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD01','1','15')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD01','2','20')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD01','4','30')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD01','3','40')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD02','5','20')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD02','6','80')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD02','7','35')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD02','8','40')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD02','9','30')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD03','10','30')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD03','11','10')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD04','12','20')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD04','13','30')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD05','14','85')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD05','15','40')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD05','16','40')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD06','17','50')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD06','18','30')					
 --insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD06','19','35','5600000')	khong ton tai ma sach 19				
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD07','20','10','1090000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD07','21','5','480000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD08','22','30','2820000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD09','23','35','4515000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD09','24','90','8064000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD10','25','30','2280000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD10','26','25','2250000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD11','27','15','1470000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD11','28','15','1845000')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD07','20','10')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD07','21','5')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD08','22','30')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD09','23','35')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD09','24','90')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD10','25','30')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD10','26','25')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD11','27','15')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD11','28','15')					
+					
 
 -- PHẦN VIEW =================================================================================
 
@@ -428,4 +385,3 @@ go
 create view SoLuongSachBanTrongNgay as
 select ChiTietHoaDon.MaSach,sum(SoLuongBan) TongSoLuongBan from HoaDon join ChiTietHoaDon on HoaDon.MaHD = ChiTietHoaDon.MaHD 
 where (select cast(NgayInHD as date) ngayInHD from HoaDon) = cast(GetDate() as date) group by ChiTietHoaDon.MaSach
-
