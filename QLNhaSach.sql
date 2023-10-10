@@ -56,7 +56,7 @@ CREATE TABLE ChiTietHoaDon(
 
 -- PHẦN TẠO CÁC TRIGGER:==========================================================================
 
--- Kiểm tra thông tin sách lúc nhập kho có bị trùng không, nếu mã sách đã tồn tại và mã nxb của sách đúng với mã nxb ở phiếu nhập tương ứng thì tăng số lượng sách trong bảng sách
+-- 1. Kiểm tra thông tin sách lúc nhập kho có bị trùng không, nếu mã sách đã tồn tại và mã nxb của sách đúng với mã nxb ở phiếu nhập tương ứng thì tăng số lượng sách trong bảng sách
 IF OBJECT_ID ('Trigger_TangSoLuongSach', 'TR') IS NOT NULL 
   DROP TRIGGER Trigger_TangSoLuongSach; 
 GO
@@ -91,11 +91,6 @@ BEGIN
         ROLLBACK;
     END
 END
--- delete from ChiTietPhieuNhap where MaPhieuNhap = 'PN01' and MaSach = '1'
--- delete from ChiTietPhieuNhap where MaPhieuNhap = 'PN02' and MaSach = '1'
---insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN01','1',15)
---insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN02','1',50)
-
 -- PHẦN INSERT DATA:==========================================================================
 
 -- Insert Data into NhaXuatBan:
