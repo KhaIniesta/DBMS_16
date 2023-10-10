@@ -50,7 +50,7 @@ CREATE TABLE ChiTietHoaDon(
     MaHD NCHAR(15) REFERENCES HoaDon(MaHD), 
     MaSach NCHAR(10) REFERENCES Sach(MaSach), 
     SoLuongBan INT CHECK (SoLuongBan > 0), 
-    Gia MONEY NOT NULL CHECK (Gia > 0),
+    Gia MONEY NOT NULL,
     PRIMARY KEY (MaHD, MaSach)
 )
 
@@ -92,6 +92,33 @@ BEGIN
     END
 END
 
+-- 2. Kiểm tra số lượng từng loại sách trong kho có đủ để bán không
+GO
+CREATE TRIGGER TG_KTSachTrongKho
+ON ChiTietHoaDon
+AFTER INSERT, UPDATE
+AS
+BEGIN 
+	DECLARE @SoLuongBan INT, @SoLuongNhap INT,@SoLuongTon INT;
+	-- Số lượng từng loại sách đã bán
+	SELECT	@SoLuongBan = SoLuongBan 
+	FROM ChiTietHoaDon;
+	
+	-- Số lượng từng loại sách đã nhập
+	SELECT @SoLuongNhap = SoLuongNhap 
+	FROM ChiTietPhieuNhap;
+	
+	--Tính số lượng từng loại sách tồn kho
+	SET @SoLuongTon = @SoLuongNhap - @SoLuongBan;
+
+	-- Kiểm tra số lượng từng loại sách tồn kho có đủ để bán hay không
+	IF @SoLuongTon < 0
+	BEGIN
+		RAISERROR('Số lượng sách trong kho không đủ để bán ', 16, 1);
+		ROLLBACK TRANSACTION;	
+	END
+END;
+
 --3. Tạo trigger xác nhận trước khi xóa sách 
 GO
 CREATE TRIGGER DeleteSach
@@ -115,7 +142,6 @@ BEGIN
     END;
 END;
 
-
 --4. Tạo trigger xác nhận trước khi sửa Thông tin sách
 GO 
 CREATE TRIGGER UpdateSach
@@ -136,6 +162,7 @@ BEGIN
         END;
     END;
 END;
+
 
 
 --5. Trigger cap nhat so luong sach sau khi dat hang - xuat hoa don 
@@ -173,6 +200,24 @@ begin
 end;
 go
 
+--  6. Tính giá của từng mặt hàng trong chi tiết hóa đơn = Giá(bảng sách) * số lượng(chi tiết hóa dơn)
+IF OBJECT_ID ('Trigger_TinhGiaChiTietHoaDon', 'TR') IS NOT NULL 
+  DROP TRIGGER Trigger_TinhGiaChiTietHoaDon; 
+GO
+
+CREATE TRIGGER Trigger_TinhGiaChiTietHoaDon
+ON ChiTietHoaDon
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    -- Cập nhật giá (Gia) trong ChiTietHoaDon
+    UPDATE ChiTietHoaDon
+    SET Gia = Sach.Gia * inserted.SoLuongBan
+    FROM ChiTietHoaDon
+    INNER JOIN inserted ON ChiTietHoaDon.MaHD = inserted.MaHD AND ChiTietHoaDon.MaSach = inserted.MaSach
+    INNER JOIN Sach ON ChiTietHoaDon.MaSach = Sach.MaSach;
+END
+GO
 -- PHẦN INSERT DATA:==========================================================================
 
 -- Insert Data into NhaXuatBan:
@@ -325,6 +370,26 @@ insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD11','27','15','
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD11','28','15','1845000')					
 
 -- PHẦN VIEW =================================================================================
+
+-- 1. Xem các thông tin sách trong kho
+GO
+CREATE VIEW V_ThongTinSachTrongKho AS
+SELECT s.MaTG, s.MaNXB, s.TenSach, s.SoLuongSach, s.Gia, s.TheLoai , ctpn.MaPhieuNhap, ctpn.SoLuongNhap
+FROM Sach s INNER JOIN ChiTietPhieuNhap ctpn ON s.MaSach = ctpn.MaSach
+GO
+
+-- 2. Xem chi tiết các hóa đơn
+CREATE VIEW V_ChiTietCacHoaDon AS
+SELECT hd.TongHD, hd.NgayInHD, cthd.MaSach, cthd.SoLuongBan, cthd.Gia
+FROM HoaDon hd INNER JOIN ChiTietHoaDon cthd ON hd.MaHD = cthd.MaHD
+GO
+
+-- 3. Xem chi tiết các phiếu nhập
+CREATE VIEW V_ChiTietCacPhieuNhap AS
+SELECT pn.MaNXB, pn.NgayNhap, ctpn.MaSach, ctpn.SoLuongNhap
+FROM PhieuNhap pn INNER JOIN ChiTietPhieuNhap ctpn ON pn.MaPhieuNhap = ctpn.MaPhieuNhap
+GO
+
 -- 4.a View xuat tong doanh thu theo ngay
 go
 create view DTNgay as
