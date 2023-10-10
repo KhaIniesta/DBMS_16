@@ -93,6 +93,7 @@ BEGIN
 END
 
 -- 2. Kiểm tra số lượng từng loại sách trong kho có đủ để bán không
+GO
 CREATE TRIGGER TG_KTSachTrongKho
 ON ChiTietHoaDon
 AFTER INSERT, UPDATE
