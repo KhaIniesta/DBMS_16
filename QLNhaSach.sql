@@ -230,8 +230,8 @@ select ChiTietHoaDon.MaSach,sum(SoLuongBan) TongSoLuongBan from HoaDon join ChiT
 where (select cast(NgayInHD as date) ngayInHD from HoaDon) = cast(GetDate() as date) group by ChiTietHoaDon.MaSach
 go
 
+    ---------   5. Trigger cap nhat so luong sach sau khi dat hang - xuat hoa don  ---------
 --Cong thuc tinh sl con lai: soluongsach = soluongsach - soluongban + soluonghuy
---Trigger cap nhat so luong sach sau khi dat hang - xuat hoa don
 create trigger SoLuongSauDatHang on ChiTietHoaDon
 after insert as
 begin
@@ -259,6 +259,7 @@ begin
 	from Sach join deleted on Sach.MaSach = deleted.MaSach
 end;
 go
+    ---------   HET TRIGGER 5  ---------
 
 --Test trigger Cap nhat so luong sach 
 insert into ChiTietHoaDon values ('HD01',11,20,120000)
@@ -271,4 +272,5 @@ select * from ChiTietHoaDon
 go
 select * from Sach
 go
+
 
