@@ -42,7 +42,7 @@ CREATE TABLE ChiTietPhieuNhap(
 
 CREATE TABLE HoaDon(
     MaHD NCHAR(15) PRIMARY KEY, 
-    TongHD MONEY CHECK( TongHD >= 0) default 0, 
+    TongHD MONEY CHECK( TongHD >= 0) DEFAULT 0, 
     NgayInHD DATETIME NOT NULL
 )
 
@@ -92,6 +92,77 @@ BEGIN
     END
 END
 
+-- 2. Kiểm tra số lượng từng loại sách trong kho có đủ để bán không
+GO
+CREATE TRIGGER TG_KTSachTrongKho
+ON ChiTietHoaDon
+AFTER INSERT, UPDATE
+AS
+BEGIN 
+	DECLARE @SoLuongBan INT, @SoLuongNhap INT,@SoLuongTon INT;
+	-- Số lượng từng loại sách đã bán
+	SELECT	@SoLuongBan = SoLuongBan 
+	FROM ChiTietHoaDon;
+	
+	-- Số lượng từng loại sách đã nhập
+	SELECT @SoLuongNhap = SoLuongNhap 
+	FROM ChiTietPhieuNhap;
+	
+	--Tính số lượng từng loại sách tồn kho
+	SET @SoLuongTon = @SoLuongNhap - @SoLuongBan;
+
+	-- Kiểm tra số lượng từng loại sách tồn kho có đủ để bán hay không
+	IF @SoLuongTon < 0
+	BEGIN
+		RAISERROR('Số lượng sách trong kho không đủ để bán ', 16, 1);
+		ROLLBACK TRANSACTION;	
+	END
+END;
+
+--3. Tạo trigger xác nhận trước khi xóa sách 
+GO
+CREATE TRIGGER DeleteSach
+ON Sach 
+FOR DELETE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF (SELECT COUNT(*) FROM deleted) > 0
+    BEGIN
+        DECLARE @userResponse CHAR(1);
+        SET @userResponse = 'n';
+
+        SELECT @userResponse = LOWER(SUBSTRING(CONVERT(VARCHAR,'YES', 1), 1, 1));
+
+        IF @userResponse <> 'y'
+        BEGIN
+            ROLLBACK TRANSACTION;
+        END;
+    END;
+END;
+
+--4. Tạo trigger xác nhận trước khi sửa Thông tin sách
+GO 
+CREATE TRIGGER UpdateSach
+ON Sach
+FOR UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF (SELECT COUNT(*) FROM deleted) > 0
+    BEGIN
+        DECLARE @userResponse NVARCHAR(1);
+		SET @userResponse = 'n';
+        SELECT @userResponse = LOWER(SUBSTRING(CONVERT(VARCHAR,'NO', 1), 1, 1));
+        IF @userResponse <> 'y'
+        BEGIN
+            ROLLBACK TRANSACTION;
+        END;
+    END;
+END;
+
 --5. Trigger cap nhat so luong sach sau khi dat hang - xuat hoa don 
 
 -- 5.a Sau khi đặt hàng - xuất hóa đơn
@@ -126,6 +197,26 @@ begin
 	from Sach join deleted on Sach.MaSach = deleted.MaSach
 end;
 go
+
+--  6. Tính giá của từng mặt hàng trong chi tiết hóa đơn = Giá(bảng sách) * số lượng(chi tiết hóa dơn)
+IF OBJECT_ID ('Trigger_TinhGiaChiTietHoaDon', 'TR') IS NOT NULL 
+  DROP TRIGGER Trigger_TinhGiaChiTietHoaDon; 
+GO
+
+CREATE TRIGGER Trigger_TinhGiaChiTietHoaDon
+ON ChiTietHoaDon
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    -- Cập nhật giá (Gia) trong ChiTietHoaDon
+    UPDATE ChiTietHoaDon
+    SET Gia = Sach.Gia * inserted.SoLuongBan
+    FROM ChiTietHoaDon
+    INNER JOIN inserted ON ChiTietHoaDon.MaHD = inserted.MaHD AND ChiTietHoaDon.MaSach = inserted.MaSach
+    INNER JOIN Sach ON ChiTietHoaDon.MaSach = Sach.MaSach;
+END
+GO
+
 ----7. Trigger cập nhật tổng hóa đơn trong bảng hóa đơn 
 -- 7.a Cập nhật lại tổng hóa đơn sau khi thêm sp (thêm giá) vào chi tiết hóa đơn
 create trigger TinhTongHoaDonKhiThem on ChiTietHoaDon
@@ -145,7 +236,6 @@ begin
 	from HoaDon join deleted on HoaDon.MaHD = deleted.MaHD
 end;
 go
-
 -- PHẦN INSERT DATA:==========================================================================
 
 -- Insert Data into NhaXuatBan:
@@ -265,7 +355,7 @@ insert into HoaDon(MaHD,NgayInHD) values ('HD07','2023-09-04 00:00:00')
 insert into HoaDon(MaHD,NgayInHD) values ('HD08','2023-09-04 00:00:00')						
 insert into HoaDon(MaHD,NgayInHD) values ('HD09','2023-09-04 00:00:00')						
 insert into HoaDon(MaHD,NgayInHD) values ('HD10','2023-09-05 00:00:00')						
-insert into HoaDon(MaHD,NgayInHD) values ('HD11','2023-09-05 00:00:00')					
+insert into HoaDon(MaHD,NgayInHD) values ('HD11','2023-09-05 00:00:00')						
 
 -- Insert Data into ChiTietHoaDon:
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD01','1','15','780000')					
@@ -298,6 +388,26 @@ insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD11','27','15','
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD11','28','15','1845000')					
 
 -- PHẦN VIEW =================================================================================
+
+-- 1. Xem các thông tin sách trong kho
+GO
+CREATE VIEW V_ThongTinSachTrongKho AS
+SELECT s.MaTG, s.MaNXB, s.TenSach, s.SoLuongSach, s.Gia, s.TheLoai , ctpn.MaPhieuNhap, ctpn.SoLuongNhap
+FROM Sach s INNER JOIN ChiTietPhieuNhap ctpn ON s.MaSach = ctpn.MaSach
+GO
+
+-- 2. Xem chi tiết các hóa đơn
+CREATE VIEW V_ChiTietCacHoaDon AS
+SELECT hd.TongHD, hd.NgayInHD, cthd.MaSach, cthd.SoLuongBan, cthd.Gia
+FROM HoaDon hd INNER JOIN ChiTietHoaDon cthd ON hd.MaHD = cthd.MaHD
+GO
+
+-- 3. Xem chi tiết các phiếu nhập
+CREATE VIEW V_ChiTietCacPhieuNhap AS
+SELECT pn.MaNXB, pn.NgayNhap, ctpn.MaSach, ctpn.SoLuongNhap
+FROM PhieuNhap pn INNER JOIN ChiTietPhieuNhap ctpn ON pn.MaPhieuNhap = ctpn.MaPhieuNhap
+GO
+
 -- 4.a View xuat tong doanh thu theo ngay
 go
 create view DTNgay as
@@ -318,3 +428,4 @@ go
 create view SoLuongSachBanTrongNgay as
 select ChiTietHoaDon.MaSach,sum(SoLuongBan) TongSoLuongBan from HoaDon join ChiTietHoaDon on HoaDon.MaHD = ChiTietHoaDon.MaHD 
 where (select cast(NgayInHD as date) ngayInHD from HoaDon) = cast(GetDate() as date) group by ChiTietHoaDon.MaSach
+
