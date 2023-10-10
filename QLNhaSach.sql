@@ -154,7 +154,7 @@ begin
 end;
 go
 
--- 6. Tính giá của từng mặt hàng trong chi tiết hóa đơn = Giá(bảng sách) * số lượng(chi tiết hóa dơn)
+--  6. Tính giá của từng mặt hàng trong chi tiết hóa đơn = Giá(bảng sách) * số lượng(chi tiết hóa dơn)
 IF OBJECT_ID ('Trigger_TinhGiaChiTietHoaDon', 'TR') IS NOT NULL 
   DROP TRIGGER Trigger_TinhGiaChiTietHoaDon; 
 GO
