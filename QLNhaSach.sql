@@ -50,7 +50,7 @@ CREATE TABLE ChiTietHoaDon(
     MaHD NCHAR(15) REFERENCES HoaDon(MaHD), 
     MaSach NCHAR(10) REFERENCES Sach(MaSach), 
     SoLuongBan INT CHECK (SoLuongBan > 0), 
-    Gia MONEY NOT NULL,
+    Gia MONEY NOT NULL CHECK (Gia > 0),
     PRIMARY KEY (MaHD, MaSach)
 )
 
@@ -91,6 +91,52 @@ BEGIN
         ROLLBACK;
     END
 END
+
+--3. Tạo trigger xác nhận trước khi xóa sách 
+GO
+CREATE TRIGGER DeleteSach
+ON Sach 
+FOR DELETE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF (SELECT COUNT(*) FROM deleted) > 0
+    BEGIN
+        DECLARE @userResponse CHAR(1);
+        SET @userResponse = 'n';
+
+        SELECT @userResponse = LOWER(SUBSTRING(CONVERT(VARCHAR,'YES', 1), 1, 1));
+
+        IF @userResponse <> 'y'
+        BEGIN
+            ROLLBACK TRANSACTION;
+        END;
+    END;
+END;
+
+
+--4. Tạo trigger xác nhận trước khi sửa Thông tin sách
+GO 
+CREATE TRIGGER UpdateSach
+ON Sach
+FOR UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF (SELECT COUNT(*) FROM deleted) > 0
+    BEGIN
+        DECLARE @userResponse NVARCHAR(1);
+		SET @userResponse = 'n';
+        SELECT @userResponse = LOWER(SUBSTRING(CONVERT(VARCHAR,'NO', 1), 1, 1));
+        IF @userResponse <> 'y'
+        BEGIN
+            ROLLBACK TRANSACTION;
+        END;
+    END;
+END;
+
 
 --5. Trigger cap nhat so luong sach sau khi dat hang - xuat hoa don 
 
