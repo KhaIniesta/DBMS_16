@@ -91,6 +91,42 @@ BEGIN
         ROLLBACK;
     END
 END
+
+--5. Trigger cap nhat so luong sach sau khi dat hang - xuat hoa don 
+
+-- 5.a Sau khi đặt hàng - xuất hóa đơn
+--Cong thuc tinh sl con lai: soluongsach = soluongsach - soluongban + soluonghuy
+go
+create trigger SoLuongSauDatHang on ChiTietHoaDon
+after insert as
+begin
+	update Sach
+	set SoLuongSach = SoLuongSach - (select SoLuongBan from inserted where MaSach = Sach.MaSach)
+	from Sach join inserted on Sach.MaSach = inserted.MaSach
+end;
+go
+
+-- 5.b Sau khi xóa hoặc hủy đơn hàng - xóa khỏi danh sách hóa đơn
+create trigger SoLuongSauXoaDatHang on ChiTietHoaDon
+for delete as
+begin
+	update Sach
+	set SoLuongSach = SoLuongSach + (select SoLuongBan from deleted where MaSach = Sach.MaSach)
+	from Sach join deleted on Sach.MaSach = deleted.MaSach
+end;
+go
+
+-- 5.c Sau khi cập nhật lại số lượng sách trong hóa đơn
+create trigger SoLuongSauCapNhat on ChiTietHoaDon
+after update as
+begin
+	update Sach
+	set SoLuongSach = SoLuongSach - (select SoLuongBan from inserted where MaSach = Sach.MaSach)
+	+ (select SoLuongBan from deleted where MaSach = Sach.MaSach)
+	from Sach join deleted on Sach.MaSach = deleted.MaSach
+end;
+go
+
 -- PHẦN INSERT DATA:==========================================================================
 
 -- Insert Data into NhaXuatBan:
@@ -242,74 +278,24 @@ insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD10','26','25','
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD11','27','15','1470000')					
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD11','28','15','1845000')					
 
-
---Insert data TongHD trong bang HoaDon tinh tu bang ChiTietHoaDon
-update HoaDon
-set TongHD = (select sum(Gia) tonggia from ChiTietHoaDon where HoaDon.MaHD = ChiTietHoaDon.MaHD and HoaDon.TongHD is null group by ChiTietHoaDon.MaHD)
+-- PHẦN VIEW =================================================================================
+-- 4.a View xuat tong doanh thu theo ngay
 go
-
--- View xuat tong doanh thu theo ngay
 create view DTNgay as
 select Day(NgayInHD) Ngay, Month(NgayInHD) Thang, Year(NgayInHD) Nam, sum(TongHD) DoanhThuNgay from HoaDon group by Day(NgayInHD),Month(NgayInHD), Year(NgayInHD)
-go
 
--- View xuat tong doanh thu theo thang
+-- 4.b View xuat tong doanh thu theo thang
+go
 create view DTThang as
 select Month(NgayInHD) Thang, Year(NgayInHD) Nam, sum(TongHD) DoanhThuThang from HoaDon group by Month(NgayInHD), Year(NgayInHD)
-go
 
--- View xuat tong doanh thu theo nam
+-- 4.c View xuat tong doanh thu theo nam
+go
 create view DTNam as
 select Year(NgayInHD) Nam, sum(TongHD) DoanhThuNam from HoaDon group by Year(NgayInHD)
-go
 
--- View xem so luong sach da ban trong ngay 
+-- 5. View xem so luong sach da ban trong ngay 
+go
 create view SoLuongSachBanTrongNgay as
 select ChiTietHoaDon.MaSach,sum(SoLuongBan) TongSoLuongBan from HoaDon join ChiTietHoaDon on HoaDon.MaHD = ChiTietHoaDon.MaHD 
 where (select cast(NgayInHD as date) ngayInHD from HoaDon) = cast(GetDate() as date) group by ChiTietHoaDon.MaSach
-go
-
-    ---------   5. Trigger cap nhat so luong sach sau khi dat hang - xuat hoa don  ---------
---Cong thuc tinh sl con lai: soluongsach = soluongsach - soluongban + soluonghuy
-create trigger SoLuongSauDatHang on ChiTietHoaDon
-after insert as
-begin
-	update Sach
-	set SoLuongSach = SoLuongSach - (select SoLuongBan from inserted where MaSach = Sach.MaSach)
-	from Sach join inserted on Sach.MaSach = inserted.MaSach
-end;
-go
---Trigger cap nhat so luong sach sau xoa/huy dat hang - xoa sach khoi hoa don
-create trigger SoLuongSauXoaDatHang on ChiTietHoaDon
-for delete as
-begin
-	update Sach
-	set SoLuongSach = SoLuongSach + (select SoLuongBan from deleted where MaSach = Sach.MaSach)
-	from Sach join deleted on Sach.MaSach = deleted.MaSach
-end;
-go
---Trigger cap nhat lai so luong sach sau khi cap nhat lai so luong sach trong hoa don
-create trigger SoLuongSauCapNhat on ChiTietHoaDon
-after update as
-begin
-	update Sach
-	set SoLuongSach = SoLuongSach - (select SoLuongBan from inserted where MaSach = Sach.MaSach)
-	+ (select SoLuongBan from deleted where MaSach = Sach.MaSach)
-	from Sach join deleted on Sach.MaSach = deleted.MaSach
-end;
-go
-    ---------   HET TRIGGER 5  ---------
-
---Test trigger Cap nhat so luong sach 
-insert into ChiTietHoaDon values ('HD01',11,20,120000)
-go
-delete from ChiTietHoaDon where MaHD = 'HD01' and MaSach=11
-go
-update ChiTietHoaDon set SoLuongBan=30 where MaHD = 'HD01' and MaSach=11
-update ChiTietHoaDon set SoLuongBan=10 where MaHD = 'HD01' and MaSach=10
-select * from ChiTietHoaDon
-go
-select * from Sach
-go
-
-
