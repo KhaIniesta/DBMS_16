@@ -308,6 +308,7 @@ insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD11','28','15','
 -- PHẦN VIEW =================================================================================
 
 -- 1. Xem các thông tin sách trong kho
+GO
 CREATE VIEW V_ThongTinSachTrongKho AS
 SELECT s.MaTG, s.MaNXB, s.TenSach, s.SoLuongSach, s.Gia, s.TheLoai , ctpn.MaPhieuNhap, ctpn.SoLuongNhap
 FROM Sach s INNER JOIN ChiTietPhieuNhap ctpn ON s.MaSach = ctpn.MaSach
