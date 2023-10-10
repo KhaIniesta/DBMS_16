@@ -154,6 +154,24 @@ begin
 end;
 go
 
+-- 6. Tính giá của từng mặt hàng trong chi tiết hóa đơn = Giá(bảng sách) * số lượng(chi tiết hóa dơn)
+IF OBJECT_ID ('Trigger_TinhGiaChiTietHoaDon', 'TR') IS NOT NULL 
+  DROP TRIGGER Trigger_TinhGiaChiTietHoaDon; 
+GO
+
+CREATE TRIGGER Trigger_TinhGiaChiTietHoaDon
+ON ChiTietHoaDon
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    -- Cập nhật giá (Gia) trong ChiTietHoaDon
+    UPDATE ChiTietHoaDon
+    SET Gia = Sach.Gia * inserted.SoLuongBan
+    FROM ChiTietHoaDon
+    INNER JOIN inserted ON ChiTietHoaDon.MaHD = inserted.MaHD AND ChiTietHoaDon.MaSach = inserted.MaSach
+    INNER JOIN Sach ON ChiTietHoaDon.MaSach = Sach.MaSach;
+END
+GO
 -- PHẦN INSERT DATA:==========================================================================
 
 -- Insert Data into NhaXuatBan:
