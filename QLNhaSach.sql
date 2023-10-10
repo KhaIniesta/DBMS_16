@@ -54,6 +54,50 @@ CREATE TABLE ChiTietHoaDon(
     PRIMARY KEY (MaHD, MaSach)
 )
 
+-- PHẦN TẠO CÁC TRIGGER:==========================================================================
+
+-- Kiểm tra thông tin sách lúc nhập kho có bị trùng không, nếu mã sách đã tồn tại và mã nxb của sách đúng với mã nxb ở phiếu nhập tương ứng thì tăng số lượng sách trong bảng sách
+IF OBJECT_ID ('Trigger_TangSoLuongSach', 'TR') IS NOT NULL 
+  DROP TRIGGER Trigger_TangSoLuongSach; 
+GO
+CREATE TRIGGER Trigger_TangSoLuongSach
+ON ChiTietPhieuNhap
+AFTER INSERT
+AS
+BEGIN
+    -- Kiểm tra và cập nhật số lượng sách
+    DECLARE @MaPhieuNhap NCHAR(10)
+    DECLARE @MaSach NCHAR(10)
+    
+    SELECT @MaPhieuNhap = i.MaPhieuNhap, @MaSach = i.MaSach
+    FROM inserted i
+
+    IF EXISTS (
+        SELECT 1
+        FROM Sach s
+        INNER JOIN PhieuNhap pn ON s.MaNXB = pn.MaNXB
+        WHERE s.MaSach = @MaSach
+        AND pn.MaPhieuNhap = @MaPhieuNhap
+    )
+    BEGIN
+        -- Tăng số lượng sách
+        UPDATE Sach
+        SET SoLuongSach = SoLuongSach + (SELECT SoLuongNhap FROM inserted WHERE MaPhieuNhap = @MaPhieuNhap AND MaSach = @MaSach)
+        WHERE MaSach = @MaSach
+    END
+    ELSE
+    BEGIN
+        -- Nếu không thỏa mãn điều kiện, thực hiện ROLLBACK
+        ROLLBACK;
+    END
+END
+-- delete from ChiTietPhieuNhap where MaPhieuNhap = 'PN01' and MaSach = '1'
+-- delete from ChiTietPhieuNhap where MaPhieuNhap = 'PN02' and MaSach = '1'
+--insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN01','1',15)
+--insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN02','1',50)
+
+-- PHẦN INSERT DATA:==========================================================================
+
 -- Insert Data into NhaXuatBan:
 insert into NhaXuatBan(MaNXB,TenNXB,DiaChiNXB,LienHe) values ('NXB_KD',N'NXB Kim Đồng',N'248 Cống Quỳnh, P. Phạm Ngũ Lão, Q.1 TP. Hồ Chí Minh','info@nxbkimdong.com.vn')											
 insert into NhaXuatBan(MaNXB,TenNXB,DiaChiNXB,LienHe) values ('NXB_T',N'NXB Trẻ',N'161B Lý Chính Thắng, phường Võ Thị Sáu, Quận 3, TP. Hồ Chí Minh','hopthubandoc@nxbtre.com.vn ')											
@@ -202,18 +246,3 @@ insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD10','25','30','
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD10','26','25','2250000')					
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD11','27','15','1470000')					
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD11','28','15','1845000')					
-
--- Kiểm tra thông tin sách lúc nhập kho có bị trùng không, nếu trùng thì tăng số lượng sách trong bảng sách
-GO
-CREATE TRIGGER Trigger_UpdateSoLuongSach
-ON ChiTietPhieuNhap
-AFTER INSERT
-AS
-BEGIN
-    -- Kiểm tra và cập nhật số lượng sách
-    UPDATE Sach
-    SET SoLuongSach = Sach.SoLuongSach + i.SoLuongNhap
-    FROM Sach
-    INNER JOIN inserted i ON Sach.MaSach = i.MaSach;
-END
-
