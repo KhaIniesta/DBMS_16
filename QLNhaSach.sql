@@ -23,7 +23,7 @@ CREATE TABLE Sach(
     MaNXB NCHAR(10) REFERENCES NhaXuatBan(MaNXB), 
     TenSach NVARCHAR(100) NOT NULL, 
     SoLuongSach INT NOT NULL CHECK(SoLuongSach >= 0), 
-    Gia MONEY NOT NULL, 
+    Gia MONEY NOT NULL CHECK(Gia > 0), 
     TheLoai NVARCHAR(50) NOT NULL
 )
 
@@ -50,7 +50,7 @@ CREATE TABLE ChiTietHoaDon(
     MaHD NCHAR(15) REFERENCES HoaDon(MaHD), 
     MaSach NCHAR(10) REFERENCES Sach(MaSach), 
     SoLuongBan INT CHECK (SoLuongBan > 0), 
-    Gia MONEY NOT NULL DEFAULT 0,
+    Gia MONEY NOT NULL DEFAULT 0 CHECK(Gia >= 0),
     PRIMARY KEY (MaHD, MaSach)
 )
 
@@ -111,9 +111,9 @@ BEGIN
 		END;
 END;
 
---5. Trigger cap nhat so luong sach sau khi dat hang - xuat hoa don 
+--3. Trigger cap nhat so luong sach sau khi dat hang - xuat hoa don 
 
--- 5.a Sau khi đặt hàng - xuất hóa đơn
+-- 3.a Sau khi đặt hàng - xuất hóa đơn
 --Cong thuc tinh sl con lai: soluongsach = soluongsach - soluongban + soluonghuy
 go
 create trigger SoLuongSauDatHang on ChiTietHoaDon
@@ -125,7 +125,7 @@ begin
 end;
 go
 
--- 5.b Sau khi xóa hoặc hủy đơn hàng - xóa khỏi danh sách hóa đơn
+-- 3.b Sau khi xóa hoặc hủy đơn hàng - xóa khỏi danh sách hóa đơn
 create trigger SoLuongSauXoaDatHang on ChiTietHoaDon
 for delete as
 begin
@@ -135,7 +135,7 @@ begin
 end;
 go
 
--- 5.c Sau khi cập nhật lại số lượng sách trong hóa đơn
+-- 3.c Sau khi cập nhật lại số lượng sách trong hóa đơn
 create trigger SoLuongSauCapNhat on ChiTietHoaDon
 after update as
 begin
@@ -146,7 +146,7 @@ begin
 end;
 go
 
---  6. Tính giá của từng mặt hàng trong chi tiết hóa đơn = Giá(bảng sách) * số lượng(chi tiết hóa dơn)
+--  4. Tính giá của từng mặt hàng trong chi tiết hóa đơn = Giá(bảng sách) * số lượng(chi tiết hóa dơn)
 IF OBJECT_ID ('Trigger_TinhGiaChiTietHoaDon', 'TR') IS NOT NULL 
   DROP TRIGGER Trigger_TinhGiaChiTietHoaDon; 
 GO
@@ -165,8 +165,8 @@ BEGIN
 END
 GO
 
-----7. Trigger cập nhật tổng hóa đơn trong bảng hóa đơn 
--- 7.a Cập nhật lại tổng hóa đơn sau khi thêm sp (thêm giá) vào chi tiết hóa đơn
+----5. Trigger cập nhật tổng hóa đơn trong bảng hóa đơn 
+-- 5.a Cập nhật lại tổng hóa đơn sau khi thêm sp (thêm giá) vào chi tiết hóa đơn
 create trigger TinhTongHoaDonKhiThem on ChiTietHoaDon
 after update as
 begin
@@ -175,7 +175,7 @@ begin
 	from HoaDon join inserted on HoaDon.MaHD = inserted.MaHD
 end;
 go
--- 7.b Cập nhật lại tổng hóa đơn sau khi xóa sp ra khỏi chi tiết hóa đơn
+-- 5.b Cập nhật lại tổng hóa đơn sau khi xóa sp ra khỏi chi tiết hóa đơn
 create trigger TinhTongHoaDonKhiXoa on ChiTietHoaDon
 after delete as
 begin
