@@ -91,32 +91,24 @@ BEGIN
         ROLLBACK;
     END
 END
+GO
 
 -- 2. Kiểm tra số lượng từng loại sách trong kho có đủ để bán không
-GO
 CREATE TRIGGER TG_KTSachTrongKho
 ON ChiTietHoaDon
-AFTER INSERT, UPDATE
+INSTEAD OF INSERT, UPDATE
 AS
-BEGIN 
-	DECLARE @SoLuongBan INT, @SoLuongNhap INT,@SoLuongTon INT;
-	-- Số lượng từng loại sách đã bán
-	SELECT	@SoLuongBan = SoLuongBan 
-	FROM ChiTietHoaDon;
+BEGIN
+	DECLARE @SoLuongSach INT, @SoLuongBan INT
 	
-	-- Số lượng từng loại sách đã nhập
-	SELECT @SoLuongNhap = SoLuongNhap 
-	FROM ChiTietPhieuNhap;
-	
-	--Tính số lượng từng loại sách tồn kho
-	SET @SoLuongTon = @SoLuongTon + @SoLuongNhap - @SoLuongBan;
+	SELECT @SoLuongSach = Sach.SoLuongSach, @SoLuongBan = inserted.SoLuongBan
+	FROM Sach join inserted ON Sach.MaSach = inserted.MaSach
 
-	-- Kiểm tra số lượng từng loại sách tồn kho có đủ để bán hay không
-	IF @SoLuongTon < 0
-	BEGIN
-		RAISERROR('Số lượng sách trong kho không đủ để bán ', 16, 1);
-		ROLLBACK TRANSACTION;	
-	END
+	IF (@SoLuongSach<@SoLuongBan)
+		BEGIN
+			RAISERROR('Số lượng sách trong kho không đủ để bán ', 16, 1);
+			Rollback;
+		END;
 END;
 
 --5. Trigger cap nhat so luong sach sau khi dat hang - xuat hoa don 
