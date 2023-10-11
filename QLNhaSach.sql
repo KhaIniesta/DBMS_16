@@ -96,7 +96,7 @@ GO
 -- 2. Kiểm tra số lượng từng loại sách trong kho có đủ để bán không
 CREATE TRIGGER TG_KTSachTrongKho
 ON ChiTietHoaDon
-INSTEAD OF INSERT, UPDATE
+FOR INSERT, UPDATE
 AS
 BEGIN
 	DECLARE @SoLuongSach INT, @SoLuongBan INT
