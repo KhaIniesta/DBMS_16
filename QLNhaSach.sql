@@ -218,7 +218,6 @@ insert into TacGia(MaTG,MaNXB,TenTG,LienHe) values ('TG_LCY','NXB_TG',N'Lim Chon
 insert into TacGia(MaTG,MaNXB,TenTG,LienHe) values ('TG_AG','NXB_VH',N'Antoine Galland','5726253321')											
 insert into TacGia(MaTG,MaNXB,TenTG,LienHe) values ('TG_CG','NXB_PNVN',N'Camilla Grebe','3172225163')											
 insert into TacGia(MaTG,MaNXB,TenTG,LienHe) values ('TG_NQM','NXB_PNVN',N'Nguyễn Quang Minh','9725136621')											
---insert into TacGia(MaTG,MaNXB,TenTG,LienHe) values ('TG_NNA','NXB_DTB',N'Nguyễn Nhật Ánh','395246662')	The duplicate key value is (TG_NNA    ).	Da co nha van Nguyen Nhat Anh truoc do								
 insert into TacGia(MaTG,MaNXB,TenTG,LienHe) values ('TG_KL','NXB_DT',N'Kent Lineback','5268156222')		
 
 -- Insert Data into Sach:
@@ -240,7 +239,6 @@ insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('15'
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('16','TG_TV','NXB_DTB',N'Gió nam thầm thì','110','86000',N'Truyện dài')											
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('17','TG_AG','NXB_VH',N'Nghìn lẻ một đêm','100','204000',N'Văn học nước ngoài')											
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('18','TG_ACD','NXB_VH',N'Những cuộc phiêu lưu của Sherlock Holmes','72','63200',N'Trinh thám')											
---insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('19','TG_YA','NXB_VH',N'Another','70','160000',N'Kinh dị')	Khong ton tac gia co ma tac gia TG_YA										
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('20','TG_VT','NXB_TH',N'Không tự khinh bỉ, không tự phí hoài','47','109000',N'Kỹ năng sống')											
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('21','TG_VT','NXB_TH',N'Bạn đắt giá bao nhiêu','64','96000',N'Kỹ năng sống')											
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('22','TG_VT','NXB_TH',N'Không sợ chậm, chỉ sợ dừng','81','94000',N'Kỹ năng sống')											
@@ -281,7 +279,6 @@ insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN05','15'
 insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN05','16','50')					
 insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN06','17','55')					
 insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN06','18','30')					
--- insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN06','19','35') khong co sach co ma sach 19
 insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN07','20','20')					
 insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN07','21','20')					
 insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN07','22','45')					
@@ -324,7 +321,6 @@ insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD05','15','40')
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD05','16','40')					
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD06','17','50')					
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD06','18','30')					
---insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD06','19','35','5600000')	khong ton tai ma sach 19				
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD07','20','10')					
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD07','21','5')					
 insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD08','22','30')					
