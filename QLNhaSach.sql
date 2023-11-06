@@ -58,9 +58,9 @@ CREATE TABLE ChiTietHoaDon(
 
 -- 1. Kiểm tra thông tin sách lúc nhập kho có bị trùng không, nếu mã sách đã tồn tại và mã nxb của sách đúng với mã nxb ở phiếu nhập tương ứng thì tăng số lượng sách trong bảng sách
 IF OBJECT_ID ('Trigger_TangSoLuongSach', 'TR') IS NOT NULL 
-  DROP TRIGGER Trigger_TangSoLuongSach; 
+  DROP TRIGGER TG_Trigger_TangSoLuongSach; 
 GO
-CREATE TRIGGER Trigger_TangSoLuongSach
+CREATE TRIGGER TG_Trigger_TangSoLuongSach
 ON ChiTietPhieuNhap
 AFTER INSERT
 AS
@@ -116,7 +116,7 @@ END;
 -- 3.a Sau khi đặt hàng - xuất hóa đơn
 --Cong thuc tinh sl con lai: soluongsach = soluongsach - soluongban + soluonghuy
 go
-create trigger SoLuongSauDatHang on ChiTietHoaDon
+create trigger TG_SoLuongSauDatHang on ChiTietHoaDon
 after insert as
 begin
 	update Sach
@@ -126,7 +126,7 @@ end;
 go
 
 -- 3.b Sau khi xóa hoặc hủy đơn hàng - xóa khỏi danh sách hóa đơn
-create trigger SoLuongSauXoaDatHang on ChiTietHoaDon
+create trigger TG_SoLuongSauXoaDatHang on ChiTietHoaDon
 for delete as
 begin
 	update Sach
@@ -136,7 +136,7 @@ end;
 go
 
 -- 3.c Sau khi cập nhật lại số lượng sách trong hóa đơn
-create trigger SoLuongSauCapNhat on ChiTietHoaDon
+create trigger TG_SoLuongSauCapNhat on ChiTietHoaDon
 after update as
 begin
 	update Sach
@@ -148,10 +148,10 @@ go
 
 --  4. Tính giá của từng mặt hàng trong chi tiết hóa đơn = Giá(bảng sách) * số lượng(chi tiết hóa dơn)
 IF OBJECT_ID ('Trigger_TinhGiaChiTietHoaDon', 'TR') IS NOT NULL 
-  DROP TRIGGER Trigger_TinhGiaChiTietHoaDon; 
+  DROP TRIGGER TG_Trigger_TinhGiaChiTietHoaDon; 
 GO
 
-CREATE TRIGGER Trigger_TinhGiaChiTietHoaDon
+CREATE TRIGGER TG_Trigger_TinhGiaChiTietHoaDon
 ON ChiTietHoaDon
 AFTER INSERT, UPDATE
 AS
@@ -167,7 +167,7 @@ GO
 
 ----5. Trigger cập nhật tổng hóa đơn trong bảng hóa đơn 
 -- 5.a Cập nhật lại tổng hóa đơn sau khi thêm sp (thêm giá) vào chi tiết hóa đơn
-create trigger TinhTongHoaDonKhiThem on ChiTietHoaDon
+create trigger TG_TinhTongHoaDonKhiThem on ChiTietHoaDon
 after update as
 begin
 	update HoaDon
@@ -176,7 +176,7 @@ begin
 end;
 go
 -- 5.b Cập nhật lại tổng hóa đơn sau khi xóa sp ra khỏi chi tiết hóa đơn
-create trigger TinhTongHoaDonKhiXoa on ChiTietHoaDon
+create trigger TG_TinhTongHoaDonKhiXoa on ChiTietHoaDon
 after delete as
 begin
 	update HoaDon
@@ -355,21 +355,21 @@ GO
 
 -- 4.a View xuat tong doanh thu theo ngay
 go
-create view DTNgay as
+create view V_DTNgay as
 select Day(NgayInHD) Ngay, Month(NgayInHD) Thang, Year(NgayInHD) Nam, sum(TongHD) DoanhThuNgay from HoaDon group by Day(NgayInHD),Month(NgayInHD), Year(NgayInHD)
 
 -- 4.b View xuat tong doanh thu theo thang
 go
-create view DTThang as
+create view V_DTThang as
 select Month(NgayInHD) Thang, Year(NgayInHD) Nam, sum(TongHD) DoanhThuThang from HoaDon group by Month(NgayInHD), Year(NgayInHD)
 
 -- 4.c View xuat tong doanh thu theo nam
 go
-create view DTNam as
+create view V_DTNam as
 select Year(NgayInHD) Nam, sum(TongHD) DoanhThuNam from HoaDon group by Year(NgayInHD)
 
 -- 5. View xem so luong sach da ban trong ngay 
 go
-create view SoLuongSachBanTrongNgay as
+create view V_SoLuongSachBanTrongNgay as
 select ChiTietHoaDon.MaSach,sum(SoLuongBan) TongSoLuongBan from HoaDon join ChiTietHoaDon on HoaDon.MaHD = ChiTietHoaDon.MaHD 
 where (select cast(NgayInHD as date) ngayInHD from HoaDon) = cast(GetDate() as date) group by ChiTietHoaDon.MaSach
