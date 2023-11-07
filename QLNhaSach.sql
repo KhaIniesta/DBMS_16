@@ -373,3 +373,129 @@ go
 create view V_SoLuongSachBanTrongNgay as
 select ChiTietHoaDon.MaSach,sum(SoLuongBan) TongSoLuongBan from HoaDon join ChiTietHoaDon on HoaDon.MaHD = ChiTietHoaDon.MaHD 
 where (select cast(NgayInHD as date) ngayInHD from HoaDon) = cast(GetDate() as date) group by ChiTietHoaDon.MaSach
+
+-- PHẦN STORED PROCEDURE =================================================================================
+-- 1. Tạo Proc CRUD sách
+-- 1.a Thêm sách
+GO 
+CREATE PROCEDURE Proc_ThemSach
+	@MaSach NCHAR(10),
+	@MaTG NCHAR(10),
+	@MaNXB NCHAR(10),
+	@TenSach NVARCHAR(100),
+	@SoLuongSach INT,
+	@Gia MONEY,
+    @TheLoai NVARCHAR(50)
+AS
+BEGIN
+	INSERT INTO Sach VALUES(@MaSach, @MaTG, @MaNXB, @TenSach, @SoLuongSach, @Gia, @TheLoai)
+END
+
+-- 1.b Sửa sách:
+GO 
+CREATE PROCEDURE Proc_SuaSach
+	@MaSach NCHAR(10),
+	@MaTG NCHAR(10),
+	@MaNXB NCHAR(10),
+	@TenSach NVARCHAR(100),
+	@SoLuongSach INT,
+	@Gia MONEY,
+    @TheLoai NVARCHAR(50)
+AS
+BEGIN
+	UPDATE Sach
+	SET
+		MaTG = @MaTG,
+		MaNXB = @MaNXB,
+		TenSach = @TenSach,
+		SoLuongSach = @SoLuongSach,
+		Gia = @Gia,
+		TheLoai = @TheLoai
+	WHERE MaSach = @MaSach
+END
+
+-- 1.c Xóa sách:
+GO 
+CREATE PROCEDURE Proc_XoaSach
+	@MaSach NCHAR(10)
+AS
+BEGIN
+	DELETE Sach 
+	WHERE MaSach = @MaSach
+END
+
+-- 2. Tạo Proc CRUD phiếu nhập
+-- 2.a Thêm phiếu nhập
+GO 
+CREATE PROCEDURE Proc_ThemPhieuNhap
+	@MaPhieuNhap NCHAR(10), 
+    @MaNXB NCHAR(10), 
+    @NgayNhap DATETIME
+AS
+BEGIN
+	INSERT INTO PhieuNhap VALUES(@MaPhieuNhap, @MaNXB, @NgayNhap)
+END
+
+-- 2.b Sửa phiếu nhập
+GO 
+CREATE PROCEDURE Proc_SuaPhieuNhap
+	@MaPhieuNhap NCHAR(10), 
+    @MaNXB NCHAR(10), 
+    @NgayNhap DATETIME
+AS
+BEGIN
+	UPDATE PhieuNhap
+	SET
+		@MaNXB = @MaNXB, 
+		NgayNhap = @NgayNhap
+	WHERE MaPhieuNhap = @MaPhieuNhap
+END
+
+-- 2.c Xóa phiếu nhập
+GO 
+CREATE PROCEDURE Proc_XoaPhieuNhap
+	@MaPhieuNhap NCHAR(10)
+AS
+BEGIN
+	DELETE PhieuNhap 
+	WHERE MaPhieuNhap = @MaPhieuNhap
+END
+
+-- 3. Tạo Proc CRUD chi tiết phiếu nhập phiếu nhập
+-- 3.a Thêm chi tiết phiếu nhập
+GO 
+CREATE PROCEDURE Proc_ThemChiTietPhieuNhap
+	@MaPhieuNhap NCHAR(10), 
+    @MaSach NCHAR(10), 
+    @SoLuongNhap INT
+AS
+BEGIN
+	INSERT INTO ChiTietPhieuNhap VALUES(@MaPhieuNhap, @MaSach,  @SoLuongNhap)
+END
+
+-- 3.b Sửa chi tiết phiếu nhập
+GO 
+CREATE PROCEDURE Proc_SuaChiTietPhieuNhap
+	@MaPhieuNhap NCHAR(10), 
+    @MaSach NCHAR(10), 
+    @SoLuongNhap INT
+AS
+BEGIN
+	UPDATE ChiTietPhieuNhap
+	SET
+		SoLuongNhap = @SoLuongNhap
+	WHERE MaPhieuNhap = @MaPhieuNhap AND MaSach = @MaSach
+END
+
+-- 3.c Xóa chi tiết phiếu nhập
+GO 
+CREATE PROCEDURE Proc_XoaChiTietPhieuNhap
+	@MaPhieuNhap NCHAR(10), 
+    @MaSach NCHAR(10)
+AS
+BEGIN
+	DELETE ChiTietPhieuNhap 
+	WHERE MaPhieuNhap = @MaPhieuNhap AND MaSach = @MaSach
+END
+
+
