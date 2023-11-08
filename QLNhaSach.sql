@@ -171,10 +171,11 @@ create trigger TG_TinhTongHoaDonKhiThem on ChiTietHoaDon
 after update as
 begin
 	update HoaDon
-	set TongHD = TongHD + (select sum(Gia) from inserted where MaHD = HoaDon.MaHD)
-	from HoaDon join inserted on HoaDon.MaHD = inserted.MaHD
+	set TongHD = TongHD + (select sum(Gia) from inserted where MaHD = HoaDon.MaHD) - (select sum(Gia) from deleted where MaHD = HoaDon.MaHD)
+	from HoaDon join deleted on HoaDon.MaHD = deleted.MaHD
 end;
 go
+drop trigger TG_TinhTongHoaDonKhiThem
 -- 5.b Cập nhật lại tổng hóa đơn sau khi xóa sp ra khỏi chi tiết hóa đơn
 create trigger TG_TinhTongHoaDonKhiXoa on ChiTietHoaDon
 after delete as
@@ -373,3 +374,161 @@ go
 create view V_SoLuongSachBanTrongNgay as
 select ChiTietHoaDon.MaSach,sum(SoLuongBan) TongSoLuongBan from HoaDon join ChiTietHoaDon on HoaDon.MaHD = ChiTietHoaDon.MaHD 
 where (select cast(NgayInHD as date) ngayInHD from HoaDon) = cast(GetDate() as date) group by ChiTietHoaDon.MaSach
+go
+
+-- PHẦN STORED PROCEDURE -----------------------------------
+-- Proc cho CRUD bảng HoaDon
+-- Xuất thông tin hóa đơn
+create procedure Proc_HienHoaDon 
+as
+begin
+	select * from HoaDon
+end
+go
+
+-- Hiện toàn bộ mã hóa đơn
+create procedure Proc_TimKiemMaHD
+as
+begin
+	select distinct MaHD, TongHD from HoaDon order by MaHD 
+end
+go
+
+-- Tìm kiếm theo mã hóa đơn trong bảng hóa đơn
+create procedure Proc_TimKiemTheoMaHD
+	@MaHD nchar(15)
+as
+begin
+	select TongHD from HoaDon where MaHD = @MaHD
+end
+go
+
+-- Thêm mã hóa đơn
+create procedure Proc_ThemMaHoaDon 
+as
+begin
+	declare @MaHD nchar(15), @ngayThang DATE
+	set @ngayThang = getDate()
+	set @MaHD = 'HD' + format(getdate(), 'yyyyMMddhhmmss')
+	insert into HoaDon(MaHD, NgayInHD) values(@MaHD, @ngayThang)
+end
+go
+
+-- Cập nhật hóa đơn
+create procedure Proc_CapNhatHoaDon
+	@MaHD nchar(15),
+	@NgayInHoaDon datetime
+as
+begin
+	update HoaDon set MaHD = @MaHD, NgayInHD = @NgayInHoaDon
+end
+go
+
+-- Xóa hóa đơn
+create procedure Proc_XoaHoaDon
+	@MaHD nchar(15)
+as
+begin
+	delete from ChiTietHoaDon where MaHD = @MaHD
+	delete from HoaDon where MaHD = @MaHD
+end
+go
+
+-- Tìm kiếm toàn bộ Mã sách
+create procedure Proc_TimKiemMaSach
+as
+begin
+	select distinct MaSach from Sach order by MaSach 
+end
+go
+
+-- Hiển thị chi tiết sách
+create procedure Proc_HienChiTietSach
+as
+begin
+	select Sach.MaSach, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, Sach.SoLuongSach, Sach.Gia, Sach.TenSach
+	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach 
+	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
+	join TacGia on Sach.MaTG = TacGia.MaTG
+	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
+end
+go
+
+-- Hiển thị sách theo mã sách
+create procedure Proc_HienSachtheoMaSach
+	@MaSach nchar(10)
+as
+begin
+	select Sach.MaSach, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, Sach.SoLuongSach, Sach.Gia, Sach.TenSach
+	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach 
+	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
+	join TacGia on Sach.MaTG = TacGia.MaTG
+	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
+	where Sach.MaSach = @MaSach
+end
+go
+
+-- Proc cho CRUD bảng ChiTietHoaDon
+-- Hiển thị chi tiết hóa đơn
+create procedure Proc_HienCTHD
+as
+begin
+	select Sach.MaSach , HoaDon.MaHD , TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, ChiTietHoaDon.SoLuongBan, Sach.Gia, Sach.TenSach
+	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach 
+	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
+	join TacGia on Sach.MaTG = TacGia.MaTG
+	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
+end
+go
+
+-- Hiện CTHD theo mã hóa đơn
+create procedure Proc_HienCTHDTheoMaHD @MaHD nchar(15)
+as
+begin
+	select Sach.MaSach, HoaDon.MaHD, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, ChiTietHoaDon.SoLuongBan, Sach.Gia,	Sach.TenSach
+	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach 
+	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
+	join TacGia on Sach.MaTG = TacGia.MaTG
+	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
+	where HoaDon.MaHD = @MaHD
+end
+go
+
+
+-- Thêm sách cho chi tiết hóa đơn
+create procedure Proc_ThemSachCTHD
+	@MaHD nchar(15), 
+	@MaSach nchar(10), 
+	@SoLuongBan int
+as
+begin
+	insert into ChiTietHoaDon(MaHD, MaSach, SoLuongBan) values(@MaHD, @MaSach, @SoLuongBan)
+end
+go
+
+-- Xóa sách cho chi tiết hóa đơn
+create procedure Proc_CapNhatSachCTHD
+	@MaHD nchar(15), 
+	@MaSach nchar(10), 
+	@SoLuongBan int
+as
+begin
+	update ChiTietHoaDon set SoLuongBan =  @SoLuongBan where MaHD = @MaHD and MaSach = @MaSach 
+end
+go
+
+-- Cập nhật sách cho chi tiết hóa đơn
+create procedure Proc_XoaSachCTHD
+	@MaHD nchar(15),
+	@MaSach nchar(10)
+as
+begin
+	delete from ChiTietHoaDon where MaHD = @MaHD and MaSach = @MaSach
+end
+go
+
+select * from Sach
+select * from ChiTietHoaDon
+select * from HoaDon
+
+-----END----------------------------------------------------
