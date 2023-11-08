@@ -355,22 +355,22 @@ FROM PhieuNhap pn INNER JOIN ChiTietPhieuNhap ctpn ON pn.MaPhieuNhap = ctpn.MaPh
 GO
 
 -- 4.a View xuat tong doanh thu theo ngay
-go
+
 create view V_DTNgay as
-select Day(NgayInHD) Ngay, Month(NgayInHD) Thang, Year(NgayInHD) Nam, sum(TongHD) DoanhThuNgay from HoaDon group by Day(NgayInHD),Month(NgayInHD), Year(NgayInHD)
+select MaHD, Year(NgayInHD) Nam, Month(NgayInHD) Thang, Day(NgayInHD) Ngay from HoaDon
+go
 
 -- 4.b View xuat tong doanh thu theo thang
-go
 create view V_DTThang as
-select Month(NgayInHD) Thang, Year(NgayInHD) Nam, sum(TongHD) DoanhThuThang from HoaDon group by Month(NgayInHD), Year(NgayInHD)
+select MaHD, Year(NgayInHD) Nam, Month(NgayInHD) Thang, Day(NgayInHD) Ngay from HoaDon
+go
 
 -- 4.c View xuat tong doanh thu theo nam
-go
 create view V_DTNam as
-select Year(NgayInHD) Nam, sum(TongHD) DoanhThuNam from HoaDon group by Year(NgayInHD)
+select MaHD, Year(NgayInHD) Nam, Month(NgayInHD) Thang from HoaDon
+go
 
 -- 5. View xem so luong sach da ban trong ngay 
-go
 create view V_SoLuongSachBanTrongNgay as
 select ChiTietHoaDon.MaSach,sum(SoLuongBan) TongSoLuongBan from HoaDon join ChiTietHoaDon on HoaDon.MaHD = ChiTietHoaDon.MaHD 
 where (select cast(NgayInHD as date) ngayInHD from HoaDon) = cast(GetDate() as date) group by ChiTietHoaDon.MaSach
