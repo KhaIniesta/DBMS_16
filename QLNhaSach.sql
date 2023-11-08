@@ -23,7 +23,7 @@ CREATE TABLE Sach(
     MaNXB NCHAR(10) REFERENCES NhaXuatBan(MaNXB), 
     TenSach NVARCHAR(100) NOT NULL, 
     SoLuongSach INT NOT NULL CHECK(SoLuongSach >= 0), 
-    Gia MONEY NOT NULL, 
+    Gia MONEY NOT NULL CHECK(Gia > 0), 
     TheLoai NVARCHAR(50) NOT NULL
 )
 
@@ -42,7 +42,7 @@ CREATE TABLE ChiTietPhieuNhap(
 
 CREATE TABLE HoaDon(
     MaHD NCHAR(15) PRIMARY KEY, 
-    TongHD MONEY CHECK( TongHD >= 0), 
+    TongHD MONEY CHECK( TongHD >= 0) DEFAULT 0, 
     NgayInHD DATETIME NOT NULL
 )
 
@@ -50,7 +50,7 @@ CREATE TABLE ChiTietHoaDon(
     MaHD NCHAR(15) REFERENCES HoaDon(MaHD), 
     MaSach NCHAR(10) REFERENCES Sach(MaSach), 
     SoLuongBan INT CHECK (SoLuongBan > 0), 
-    Gia MONEY NOT NULL CHECK (Gia > 0),
+    Gia MONEY NOT NULL DEFAULT 0 CHECK(Gia >= 0),
     PRIMARY KEY (MaHD, MaSach)
 )
 
@@ -58,9 +58,9 @@ CREATE TABLE ChiTietHoaDon(
 
 -- 1. Kiểm tra thông tin sách lúc nhập kho có bị trùng không, nếu mã sách đã tồn tại và mã nxb của sách đúng với mã nxb ở phiếu nhập tương ứng thì tăng số lượng sách trong bảng sách
 IF OBJECT_ID ('Trigger_TangSoLuongSach', 'TR') IS NOT NULL 
-  DROP TRIGGER Trigger_TangSoLuongSach; 
+  DROP TRIGGER TG_Trigger_TangSoLuongSach; 
 GO
-CREATE TRIGGER Trigger_TangSoLuongSach
+CREATE TRIGGER TG_Trigger_TangSoLuongSach
 ON ChiTietPhieuNhap
 AFTER INSERT
 AS
@@ -91,59 +91,32 @@ BEGIN
         ROLLBACK;
     END
 END
-
---3. Tạo trigger xác nhận trước khi xóa sách 
 GO
-CREATE TRIGGER DeleteSach
-ON Sach 
-FOR DELETE
+
+-- 2. Kiểm tra số lượng từng loại sách trong kho có đủ để bán không
+CREATE TRIGGER TG_KTSachTrongKho
+ON ChiTietHoaDon
+FOR INSERT, UPDATE
 AS
 BEGIN
-    SET NOCOUNT ON;
+	DECLARE @SoLuongSach INT, @SoLuongBan INT
+	
+	SELECT @SoLuongSach = Sach.SoLuongSach, @SoLuongBan = inserted.SoLuongBan
+	FROM Sach join inserted ON Sach.MaSach = inserted.MaSach
 
-    IF (SELECT COUNT(*) FROM deleted) > 0
-    BEGIN
-        DECLARE @userResponse CHAR(1);
-        SET @userResponse = 'n';
-
-        SELECT @userResponse = LOWER(SUBSTRING(CONVERT(VARCHAR,'YES', 1), 1, 1));
-
-        IF @userResponse <> 'y'
-        BEGIN
-            ROLLBACK TRANSACTION;
-        END;
-    END;
+	IF (@SoLuongSach<@SoLuongBan)
+		BEGIN
+			RAISERROR('Số lượng sách trong kho không đủ để bán ', 16, 1);
+			Rollback;
+		END;
 END;
 
+--3. Trigger cap nhat so luong sach sau khi dat hang - xuat hoa don 
 
---4. Tạo trigger xác nhận trước khi sửa Thông tin sách
-GO 
-CREATE TRIGGER UpdateSach
-ON Sach
-FOR UPDATE
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    IF (SELECT COUNT(*) FROM deleted) > 0
-    BEGIN
-        DECLARE @userResponse NVARCHAR(1);
-		SET @userResponse = 'n';
-        SELECT @userResponse = LOWER(SUBSTRING(CONVERT(VARCHAR,'NO', 1), 1, 1));
-        IF @userResponse <> 'y'
-        BEGIN
-            ROLLBACK TRANSACTION;
-        END;
-    END;
-END;
-
-
---5. Trigger cap nhat so luong sach sau khi dat hang - xuat hoa don 
-
--- 5.a Sau khi đặt hàng - xuất hóa đơn
+-- 3.a Sau khi đặt hàng - xuất hóa đơn
 --Cong thuc tinh sl con lai: soluongsach = soluongsach - soluongban + soluonghuy
 go
-create trigger SoLuongSauDatHang on ChiTietHoaDon
+create trigger TG_SoLuongSauDatHang on ChiTietHoaDon
 after insert as
 begin
 	update Sach
@@ -152,8 +125,8 @@ begin
 end;
 go
 
--- 5.b Sau khi xóa hoặc hủy đơn hàng - xóa khỏi danh sách hóa đơn
-create trigger SoLuongSauXoaDatHang on ChiTietHoaDon
+-- 3.b Sau khi xóa hoặc hủy đơn hàng - xóa khỏi danh sách hóa đơn
+create trigger TG_SoLuongSauXoaDatHang on ChiTietHoaDon
 for delete as
 begin
 	update Sach
@@ -162,8 +135,8 @@ begin
 end;
 go
 
--- 5.c Sau khi cập nhật lại số lượng sách trong hóa đơn
-create trigger SoLuongSauCapNhat on ChiTietHoaDon
+-- 3.c Sau khi cập nhật lại số lượng sách trong hóa đơn
+create trigger TG_SoLuongSauCapNhat on ChiTietHoaDon
 after update as
 begin
 	update Sach
@@ -173,6 +146,44 @@ begin
 end;
 go
 
+--  4. Tính giá của từng mặt hàng trong chi tiết hóa đơn = Giá(bảng sách) * số lượng(chi tiết hóa dơn)
+IF OBJECT_ID ('Trigger_TinhGiaChiTietHoaDon', 'TR') IS NOT NULL 
+  DROP TRIGGER TG_Trigger_TinhGiaChiTietHoaDon; 
+GO
+
+CREATE TRIGGER TG_Trigger_TinhGiaChiTietHoaDon
+ON ChiTietHoaDon
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    -- Cập nhật giá (Gia) trong ChiTietHoaDon
+    UPDATE ChiTietHoaDon
+    SET Gia = Sach.Gia * inserted.SoLuongBan
+    FROM ChiTietHoaDon
+    INNER JOIN inserted ON ChiTietHoaDon.MaHD = inserted.MaHD AND ChiTietHoaDon.MaSach = inserted.MaSach
+    INNER JOIN Sach ON ChiTietHoaDon.MaSach = Sach.MaSach;
+END
+GO
+
+----5. Trigger cập nhật tổng hóa đơn trong bảng hóa đơn 
+-- 5.a Cập nhật lại tổng hóa đơn sau khi thêm sp (thêm giá) vào chi tiết hóa đơn
+create trigger TG_TinhTongHoaDonKhiThem on ChiTietHoaDon
+after update as
+begin
+	update HoaDon
+	set TongHD = TongHD + (select sum(Gia) from inserted where MaHD = HoaDon.MaHD)
+	from HoaDon join inserted on HoaDon.MaHD = inserted.MaHD
+end;
+go
+-- 5.b Cập nhật lại tổng hóa đơn sau khi xóa sp ra khỏi chi tiết hóa đơn
+create trigger TG_TinhTongHoaDonKhiXoa on ChiTietHoaDon
+after delete as
+begin
+	update HoaDon
+	set TongHD = TongHD - (select sum(Gia) from deleted where MaHD = HoaDon.MaHD)
+	from HoaDon join deleted on HoaDon.MaHD = deleted.MaHD
+end;
+go
 -- PHẦN INSERT DATA:==========================================================================
 
 -- Insert Data into NhaXuatBan:
@@ -207,7 +218,6 @@ insert into TacGia(MaTG,MaNXB,TenTG,LienHe) values ('TG_LCY','NXB_TG',N'Lim Chon
 insert into TacGia(MaTG,MaNXB,TenTG,LienHe) values ('TG_AG','NXB_VH',N'Antoine Galland','5726253321')											
 insert into TacGia(MaTG,MaNXB,TenTG,LienHe) values ('TG_CG','NXB_PNVN',N'Camilla Grebe','3172225163')											
 insert into TacGia(MaTG,MaNXB,TenTG,LienHe) values ('TG_NQM','NXB_PNVN',N'Nguyễn Quang Minh','9725136621')											
---insert into TacGia(MaTG,MaNXB,TenTG,LienHe) values ('TG_NNA','NXB_DTB',N'Nguyễn Nhật Ánh','395246662')	The duplicate key value is (TG_NNA    ).	Da co nha van Nguyen Nhat Anh truoc do								
 insert into TacGia(MaTG,MaNXB,TenTG,LienHe) values ('TG_KL','NXB_DT',N'Kent Lineback','5268156222')		
 
 -- Insert Data into Sach:
@@ -229,7 +239,6 @@ insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('15'
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('16','TG_TV','NXB_DTB',N'Gió nam thầm thì','110','86000',N'Truyện dài')											
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('17','TG_AG','NXB_VH',N'Nghìn lẻ một đêm','100','204000',N'Văn học nước ngoài')											
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('18','TG_ACD','NXB_VH',N'Những cuộc phiêu lưu của Sherlock Holmes','72','63200',N'Trinh thám')											
---insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('19','TG_YA','NXB_VH',N'Another','70','160000',N'Kinh dị')	Khong ton tac gia co ma tac gia TG_YA										
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('20','TG_VT','NXB_TH',N'Không tự khinh bỉ, không tự phí hoài','47','109000',N'Kỹ năng sống')											
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('21','TG_VT','NXB_TH',N'Bạn đắt giá bao nhiêu','64','96000',N'Kỹ năng sống')											
 insert into Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai) values ('22','TG_VT','NXB_TH',N'Không sợ chậm, chỉ sợ dừng','81','94000',N'Kỹ năng sống')											
@@ -270,7 +279,6 @@ insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN05','15'
 insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN05','16','50')					
 insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN06','17','55')					
 insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN06','18','30')					
--- insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN06','19','35') khong co sach co ma sach 19
 insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN07','20','20')					
 insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN07','21','20')					
 insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN07','22','45')					
@@ -282,66 +290,151 @@ insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN09','27'
 insert into ChiTietPhieuNhap(MaPhieuNhap,MaSach,SoLuongNhap) values ('PN09','28','20')					
 
 -- Insert Data into HoaDon:
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD01',null,'2023-09-02 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD02',null,'2023-09-02 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD03',null,'2023-09-02 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD04',null,'2023-09-03 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD05',null,'2023-09-03 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD06',null,'2023-09-03 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD07',null,'2023-09-04 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD08',null,'2023-09-04 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD09',null,'2023-09-04 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD10',null,'2023-09-05 00:00:00')						
-insert into HoaDon(MaHD,TongHD,NgayInHD) values ('HD11',null,'2023-09-05 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD01','2023-09-02 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD02','2023-09-02 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD03','2023-09-02 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD04','2023-09-03 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD05','2023-09-03 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD06','2023-09-03 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD07','2023-09-04 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD08','2023-09-04 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD09','2023-09-04 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD10','2023-09-05 00:00:00')						
+insert into HoaDon(MaHD,NgayInHD) values ('HD11','2023-09-05 00:00:00')						
 
 -- Insert Data into ChiTietHoaDon:
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD01','1','15','780000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD01','2','20','1204000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD01','3','40','1400000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD01','4','30','1260000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD02','5','20','660000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD02','6','80','6400000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD02','7','35','1575000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD02','8','40','4600000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD02','9','30','3000000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD03','10','30','960000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD03','11','10','500000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD04','12','20','1840000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD04','13','30','3422500')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD05','14','85','10667500')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD05','15','40','2400000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD05','16','40','3440000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD06','17','50','10200000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD06','18','30','1896000')					
---insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD06','19','35','5600000')	khong ton tai ma sach 19				
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD07','20','10','1090000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD07','21','5','480000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD08','22','30','2820000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD09','23','35','4515000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD09','24','90','8064000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD10','25','30','2280000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD10','26','25','2250000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD11','27','15','1470000')					
-insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan,Gia) values ('HD11','28','15','1845000')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD01','1','15')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD01','2','20')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD01','4','30')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD01','3','40')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD02','5','20')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD02','6','80')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD02','7','35')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD02','8','40')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD02','9','30')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD03','10','30')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD03','11','10')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD04','12','20')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD04','13','30')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD05','14','85')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD05','15','40')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD05','16','40')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD06','17','50')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD06','18','30')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD07','20','10')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD07','21','5')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD08','22','30')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD09','23','35')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD09','24','90')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD10','25','30')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD10','26','25')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD11','27','15')					
+insert into ChiTietHoaDon(MaHD,MaSach,SoLuongBan) values ('HD11','28','15')					
+					
 
 -- PHẦN VIEW =================================================================================
+
+-- 1. Xem các thông tin sách trong kho
+GO
+CREATE VIEW V_ThongTinSachTrongKho AS
+SELECT s.MaTG, s.MaNXB, s.TenSach, s.SoLuongSach, s.Gia, s.TheLoai , ctpn.MaPhieuNhap, ctpn.SoLuongNhap
+FROM Sach s INNER JOIN ChiTietPhieuNhap ctpn ON s.MaSach = ctpn.MaSach
+GO
+
+-- 2. Xem chi tiết các hóa đơn
+CREATE VIEW V_ChiTietCacHoaDon AS
+SELECT hd.TongHD, hd.NgayInHD, cthd.MaSach, cthd.SoLuongBan, cthd.Gia
+FROM HoaDon hd INNER JOIN ChiTietHoaDon cthd ON hd.MaHD = cthd.MaHD
+GO
+
+-- 3. Xem chi tiết các phiếu nhập
+CREATE VIEW V_ChiTietCacPhieuNhap AS
+SELECT pn.MaNXB, pn.NgayNhap, ctpn.MaSach, ctpn.SoLuongNhap
+FROM PhieuNhap pn INNER JOIN ChiTietPhieuNhap ctpn ON pn.MaPhieuNhap = ctpn.MaPhieuNhap
+GO
+
 -- 4.a View xuat tong doanh thu theo ngay
 go
-create view DTNgay as
+create view V_DTNgay as
 select Day(NgayInHD) Ngay, Month(NgayInHD) Thang, Year(NgayInHD) Nam, sum(TongHD) DoanhThuNgay from HoaDon group by Day(NgayInHD),Month(NgayInHD), Year(NgayInHD)
 
 -- 4.b View xuat tong doanh thu theo thang
 go
-create view DTThang as
+create view V_DTThang as
 select Month(NgayInHD) Thang, Year(NgayInHD) Nam, sum(TongHD) DoanhThuThang from HoaDon group by Month(NgayInHD), Year(NgayInHD)
 
 -- 4.c View xuat tong doanh thu theo nam
 go
-create view DTNam as
+create view V_DTNam as
 select Year(NgayInHD) Nam, sum(TongHD) DoanhThuNam from HoaDon group by Year(NgayInHD)
 
 -- 5. View xem so luong sach da ban trong ngay 
 go
-create view SoLuongSachBanTrongNgay as
+create view V_SoLuongSachBanTrongNgay as
 select ChiTietHoaDon.MaSach,sum(SoLuongBan) TongSoLuongBan from HoaDon join ChiTietHoaDon on HoaDon.MaHD = ChiTietHoaDon.MaHD 
 where (select cast(NgayInHD as date) ngayInHD from HoaDon) = cast(GetDate() as date) group by ChiTietHoaDon.MaSach
+
+--trigger phat hien da co nha xuat ban nay
+go 
+CREATE TRIGGER trg_InsertNhaXuatBan
+ON NhaXuatBan
+FOR INSERT, UPDATE
+AS
+BEGIN
+-- check MaKH
+	IF EXISTS (SELECT * FROM inserted WHERE TRIM(MaNXB) = ' ')
+	BEGIN
+		RAISERROR('Mã NXB không được để trống', 16, 1)
+		ROLLBACK 
+		RETURN
+	END
+	IF NOT EXISTS (SELECT * FROM NhaXuatBan WHERE MaNXB IN (SELECT MaNXB FROM inserted))
+	BEGIN
+		RAISERROR('Mã NXB đã tồn tại', 16, 1)
+		ROLLBACK 
+		RETURN
+	END
+	-- check ten NXB
+	IF EXISTS (SELECT * FROM inserted WHERE TRIM(TenNXB) = ' ')
+	BEGIN
+		RAISERROR('Tên NXB không được để trống', 16, 1)
+		ROLLBACK 
+		RETURN
+	END
+	-- check SDT
+	IF EXISTS (SELECT * FROM inserted WHERE TRIM(LienHe) = ' ')
+	BEGIN
+		RAISERROR('Liên hệ không được để trống', 16, 1)
+		ROLLBACK 
+		RETURN
+	END
+END
+go
+--
+CREATE PROCEDURE themNhaXuatBan
+	@MaNXB nchar(10),
+	@TenNXB nvarchar(50),
+	@LienHe nvarchar(15),
+	@DiaChiNXB nvarchar(100)
+AS
+BEGIN
+	
+	BEGIN TRANSACTION
+	BEGIN TRY
+		-- Kiểm tra xem loại sản phẩm đã tồn tại hay chưa
+		IF NOT EXISTS (SELECT * FROM NhaXuatBan WHERE MaNXB =@MaNXB)
+		BEGIN
+			-- Nếu chưa tồn tại, thêm mới nha xuat ban
+			INSERT INTO NhaXuatBan(MaNXB, TenNXB, LienHe, DiaChiNXB)
+			VALUES (@MaNXB, @TenNXB, @LienHe, @DiaChiNXB)
+		END
+		COMMIT TRAN
+
+	END TRY
+	BEGIN CATCH
+		ROLLBACK
+		DECLARE @err NVARCHAR(MAX)
+		SELECT @err = N'Lỗi' + ERROR_MESSAGE()
+		RAISERROR(@err, 16, 1)
+	END CATCH
+END
