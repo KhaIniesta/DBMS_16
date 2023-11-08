@@ -703,3 +703,34 @@ select * from ChiTietHoaDon
 select * from HoaDon
 
 -----END----------------------------------------------------
+
+CREATE FUNCTION func_tinhDoanhThuNgay(@ngay INT, @thang INT, @nam INT)
+RETURNS FLOAT
+	AS
+	BEGIN
+		 DECLARE @doanhThu FLOAT = 0;
+		 SELECT @doanhThu = COALESCE(SUM(TongHD), 0)
+		 FROM HoaDon
+		 WHERE DAY(NgayInHD) = @ngay AND MONTH(NgayInHD) = @thang AND YEAR(NgayInHD) = @nam;
+	 RETURN @doanhThu;
+END;
+go
+CREATE FUNCTION func_tinhDoanhThuThang(@thang INT, @nam INT) 
+RETURNS float
+BEGIN
+	 DECLARE @doanhThu float = 0;
+	 SELECT @doanhthu = COALESCE(SUM(TongHD), 0)
+	 FROM HoaDon
+	 WHERE MONTH(NgayInHD) = @thang AND YEAR(NgayInHD) = @nam;
+	 RETURN @doanhThu;
+END;
+go
+CREATE FUNCTION func_tinhDoanhThuNam(@nam INT) 
+RETURNS float
+BEGIN
+	DECLARE @doanhThu float = 0;
+	 SELECT @doanhthu = COALESCE(SUM(TongHD), 0)
+	 FROM HoaDon
+	 WHERE YEAR(NgayInHD) = @nam;
+	 RETURN @doanhThu;
+END;
