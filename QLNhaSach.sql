@@ -410,23 +410,24 @@ BEGIN
 	END
 END
 go
---
-CREATE PROCEDURE themNhaXuatBan
+-- proc thêm
+CREATE PROCEDURE ThemNhaXuatBan
 	@MaNXB nchar(10),
 	@TenNXB nvarchar(50),
-	@LienHe nvarchar(15),
-	@DiaChiNXB nvarchar(100)
+	@DiaChiNXB nvarchar(100),
+	@LienHe nvarchar(15)
+	
 AS
 BEGIN
 	
 	BEGIN TRANSACTION
 	BEGIN TRY
-		-- Kiểm tra xem loại sản phẩm đã tồn tại hay chưa
+		-- Kiểm tra xem đã tồn tại hay chưa
 		IF NOT EXISTS (SELECT * FROM NhaXuatBan WHERE MaNXB =@MaNXB)
 		BEGIN
 			-- Nếu chưa tồn tại, thêm mới nha xuat ban
-			INSERT INTO NhaXuatBan(MaNXB, TenNXB, LienHe, DiaChiNXB)
-			VALUES (@MaNXB, @TenNXB, @LienHe, @DiaChiNXB)
+			INSERT INTO NhaXuatBan(MaNXB, TenNXB, DiaChiNXB,LienHe)
+			VALUES (@MaNXB, @TenNXB,@DiaChiNXB, @LienHe)
 		END
 		COMMIT TRAN
 
@@ -434,7 +435,29 @@ BEGIN
 	BEGIN CATCH
 		ROLLBACK
 		DECLARE @err NVARCHAR(MAX)
-		SELECT @err = N'Lỗi' + ERROR_MESSAGE()
+		SELECT @err = ERROR_MESSAGE()
 		RAISERROR(@err, 16, 1)
 	END CATCH
 END
+
+-- proc sửa NhaXuatBan
+go
+CREATE PROCEDURE SuaNhaXuatBan
+	@MaNXB nchar(10),
+	@TenNXB nvarchar(50),
+	@DiaChiNXB nvarchar(100),
+	@LienHe nvarchar(15)
+	
+AS
+BEGIN
+	BEGIN TRY
+		UPDATE dbo.NhaXuatBan SET MaNXB = @MaNXB, TenNXB = @TenNXB, DiaChiNXB= @DiaChiNXB, LienHe = @LienHe
+		WHERE MaNXB = @MaNXB
+	END TRY
+	BEGIN CATCH
+		DECLARE @err NVARCHAR(MAX)
+		SELECT @err = ERROR_MESSAGE()
+		RAISERROR(@err, 16, 1)
+	END CATCH
+END
+
