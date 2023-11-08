@@ -9,14 +9,14 @@ CREATE TABLE NhaXuatBan (
     DiaChiNXB NVARCHAR(100),
     LienHe NCHAR(50) NOT NULL
 )
-
+go
 CREATE TABLE TacGia(
     MaTG NCHAR(10) PRIMARY KEY, 
     MaNXB NCHAR(10) REFERENCES NhaXuatBan(MaNXB) ON DELETE SET NULL ON UPDATE CASCADE, 
     TenTG NVARCHAR(50) NOT NULL, 
     LienHe NCHAR(15)
 )
-
+go
 CREATE TABLE Sach(
     MaSach NCHAR(10) PRIMARY KEY, 
     MaTG NCHAR(10) REFERENCES TacGia(MaTG) ON DELETE SET NULL ON UPDATE CASCADE, 
@@ -24,33 +24,31 @@ CREATE TABLE Sach(
     TenSach NVARCHAR(100) NOT NULL, 
     SoLuongSach INT NOT NULL CHECK(SoLuongSach >= 0), 
     Gia MONEY NOT NULL CHECK(Gia > 0), 
-<<<<<<< HEAD
-    TheLoai NVARCHAR(50) NOT NULL
-=======
+
     TheLoai NVARCHAR(50) NOT NULL,
     Anh IMAGE
->>>>>>> main
-)
 
+)
+go
 CREATE TABLE PhieuNhap(
     MaPhieuNhap NCHAR(10) PRIMARY KEY, 
     MaNXB NCHAR(10) REFERENCES NhaXuatBan(MaNXB) ON DELETE SET NULL ON UPDATE CASCADE, 
     NgayNhap DATETIME NOT NULL 
 )
-
+go
 CREATE TABLE ChiTietPhieuNhap(
     MaPhieuNhap NCHAR(10) REFERENCES PhieuNhap(MaPhieuNhap) ON DELETE SET NULL ON UPDATE CASCADE, 
     MaSach NCHAR(10) REFERENCES Sach(MaSach) ON DELETE SET NULL ON UPDATE CASCADE, 
     SoLuongNhap INT NOT NULL CHECK (SoLuongNhap > 0),
     PRIMARY KEY (MaPhieuNhap, MaSach)
 )
-
+go
 CREATE TABLE HoaDon(
     MaHD NCHAR(15) PRIMARY KEY, 
     TongHD MONEY CHECK( TongHD >= 0) DEFAULT 0, 
     NgayInHD DATETIME NOT NULL
 )
-
+go
 CREATE TABLE ChiTietHoaDon(
     MaHD NCHAR(15) REFERENCES HoaDon(MaHD) ON DELETE SET NULL ON UPDATE CASCADE, 
     MaSach NCHAR(10) REFERENCES Sach(MaSach) ON DELETE SET NULL ON UPDATE CASCADE, 
@@ -593,4 +591,34 @@ BEGIN
 	WHERE MaPhieuNhap = @MaPhieuNhap AND MaSach = @MaSach
 END
 
-
+go
+CREATE FUNCTION func_tinhDoanhThuNgay(@ngay INT, @thang INT, @nam INT)
+RETURNS FLOAT
+	AS
+	BEGIN
+		 DECLARE @doanhThu FLOAT = 0;
+		 SELECT @doanhThu = COALESCE(SUM(TongHD), 0)
+		 FROM HoaDon
+		 WHERE DAY(NgayInHD) = @ngay AND MONTH(NgayInHD) = @thang AND YEAR(NgayInHD) = @nam;
+	 RETURN @doanhThu;
+END;
+go
+CREATE FUNCTION func_tinhDoanhThuThang(@thang INT, @nam INT) 
+RETURNS float
+BEGIN
+	 DECLARE @doanhThu float = 0;
+	 SELECT @doanhthu = COALESCE(SUM(TongHD), 0)
+	 FROM HoaDon
+	 WHERE MONTH(NgayInHD) = @thang AND YEAR(NgayInHD) = @nam;
+	 RETURN @doanhThu;
+END;
+go
+CREATE FUNCTION func_tinhDoanhThuNam(@nam INT) 
+RETURNS float
+BEGIN
+	DECLARE @doanhThu float = 0;
+	 SELECT @doanhthu = COALESCE(SUM(TongHD), 0)
+	 FROM HoaDon
+	 WHERE YEAR(NgayInHD) = @nam;
+	 RETURN @doanhThu;
+END;
