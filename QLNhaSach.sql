@@ -350,7 +350,7 @@ GO
 
 -- 3. Xem chi tiết các phiếu nhập
 CREATE VIEW V_ChiTietCacPhieuNhap AS
-SELECT pn.MaNXB, pn.NgayNhap, ctpn.MaSach, ctpn.SoLuongNhap
+SELECT pn.MaPhieuNhap, pn.MaNXB, pn.NgayNhap, ctpn.MaSach, ctpn.SoLuongNhap
 FROM PhieuNhap pn INNER JOIN ChiTietPhieuNhap ctpn ON pn.MaPhieuNhap = ctpn.MaPhieuNhap
 GO
 
@@ -502,6 +502,7 @@ BEGIN
 	WHERE MaPhieuNhap = @MaPhieuNhap AND MaSach = @MaSach
 END
 
+
 --4.1 func tính doanh thu theo ngày tháng năm
 go
 CREATE FUNCTION func_tinhDoanhThuNgay(@ngay INT, @thang INT, @nam INT)
@@ -623,3 +624,18 @@ BEGIN
 	END CATCH
 END
 
+-- PHẦN FUNCTION =================================================================================
+-- 1. Function lấy bảng sách
+GO
+CREATE FUNCTION Func_LayBangSach()
+RETURNS TABLE
+AS 
+	RETURN (SELECT * FROM Sach)
+
+
+-- 2. Function lấy bảng phiếu nhập
+GO
+CREATE FUNCTION Func_LayBangPhieuNhap()
+RETURNS TABLE
+AS 
+	RETURN (SELECT * FROM PhieuNhap)
