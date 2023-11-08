@@ -9,49 +9,47 @@ CREATE TABLE NhaXuatBan (
     DiaChiNXB NVARCHAR(100),
     LienHe NCHAR(50) NOT NULL
 )
-go
+
 CREATE TABLE TacGia(
     MaTG NCHAR(10) PRIMARY KEY, 
     MaNXB NCHAR(10) REFERENCES NhaXuatBan(MaNXB) ON DELETE SET NULL ON UPDATE CASCADE, 
     TenTG NVARCHAR(50) NOT NULL, 
     LienHe NCHAR(15)
 )
-go
+
 CREATE TABLE Sach(
     MaSach NCHAR(10) PRIMARY KEY, 
     MaTG NCHAR(10) REFERENCES TacGia(MaTG) ON DELETE SET NULL ON UPDATE CASCADE, 
-    MaNXB NCHAR(10) REFERENCES NhaXuatBan(MaNXB) ON DELETE SET NULL ON UPDATE CASCADE, 
+    MaNXB NCHAR(10) REFERENCES NhaXuatBan(MaNXB), 
     TenSach NVARCHAR(100) NOT NULL, 
     SoLuongSach INT NOT NULL CHECK(SoLuongSach >= 0), 
     Gia MONEY NOT NULL CHECK(Gia > 0), 
-
     TheLoai NVARCHAR(50) NOT NULL,
     Anh IMAGE
-
 )
-go
+
 CREATE TABLE PhieuNhap(
     MaPhieuNhap NCHAR(10) PRIMARY KEY, 
     MaNXB NCHAR(10) REFERENCES NhaXuatBan(MaNXB) ON DELETE SET NULL ON UPDATE CASCADE, 
     NgayNhap DATETIME NOT NULL 
 )
-go
+
 CREATE TABLE ChiTietPhieuNhap(
-    MaPhieuNhap NCHAR(10) REFERENCES PhieuNhap(MaPhieuNhap) ON DELETE SET NULL ON UPDATE CASCADE, 
-    MaSach NCHAR(10) REFERENCES Sach(MaSach) ON DELETE SET NULL ON UPDATE CASCADE, 
+    MaPhieuNhap NCHAR(10) REFERENCES PhieuNhap(MaPhieuNhap), 
+    MaSach NCHAR(10) REFERENCES Sach(MaSach), 
     SoLuongNhap INT NOT NULL CHECK (SoLuongNhap > 0),
     PRIMARY KEY (MaPhieuNhap, MaSach)
 )
-go
+
 CREATE TABLE HoaDon(
     MaHD NCHAR(15) PRIMARY KEY, 
     TongHD MONEY CHECK( TongHD >= 0) DEFAULT 0, 
     NgayInHD DATETIME NOT NULL
 )
-go
+
 CREATE TABLE ChiTietHoaDon(
-    MaHD NCHAR(15) REFERENCES HoaDon(MaHD) ON DELETE SET NULL ON UPDATE CASCADE, 
-    MaSach NCHAR(10) REFERENCES Sach(MaSach) ON DELETE SET NULL ON UPDATE CASCADE, 
+    MaHD NCHAR(15) REFERENCES HoaDon(MaHD), 
+    MaSach NCHAR(10) REFERENCES Sach(MaSach), 
     SoLuongBan INT CHECK (SoLuongBan > 0), 
     Gia MONEY NOT NULL DEFAULT 0 CHECK(Gia >= 0),
     PRIMARY KEY (MaHD, MaSach)
@@ -377,93 +375,6 @@ create view V_SoLuongSachBanTrongNgay as
 select ChiTietHoaDon.MaSach,sum(SoLuongBan) TongSoLuongBan from HoaDon join ChiTietHoaDon on HoaDon.MaHD = ChiTietHoaDon.MaHD 
 where (select cast(NgayInHD as date) ngayInHD from HoaDon) = cast(GetDate() as date) group by ChiTietHoaDon.MaSach
 
---trigger phat hien da co nha xuat ban nay
-go 
-CREATE TRIGGER trg_InsertNhaXuatBan
-ON NhaXuatBan
-FOR INSERT, UPDATE
-AS
-BEGIN
--- check MaKH
-	IF EXISTS (SELECT * FROM inserted WHERE TRIM(MaNXB) = ' ')
-	BEGIN
-		RAISERROR('Mã NXB không được để trống', 16, 1)
-		ROLLBACK 
-		RETURN
-	END
-	IF NOT EXISTS (SELECT * FROM NhaXuatBan WHERE MaNXB IN (SELECT MaNXB FROM inserted))
-	BEGIN
-		RAISERROR('Mã NXB đã tồn tại', 16, 1)
-		ROLLBACK 
-		RETURN
-	END
-	-- check ten NXB
-	IF EXISTS (SELECT * FROM inserted WHERE TRIM(TenNXB) = ' ')
-	BEGIN
-		RAISERROR('Tên NXB không được để trống', 16, 1)
-		ROLLBACK 
-		RETURN
-	END
-	-- check SDT
-	IF EXISTS (SELECT * FROM inserted WHERE TRIM(LienHe) = ' ')
-	BEGIN
-		RAISERROR('Liên hệ không được để trống', 16, 1)
-		ROLLBACK 
-		RETURN
-	END
-END
-go
--- proc thêm
-CREATE PROCEDURE ThemNhaXuatBan
-	@MaNXB nchar(10),
-	@TenNXB nvarchar(50),
-	@DiaChiNXB nvarchar(100),
-	@LienHe nvarchar(15)
-	
-AS
-BEGIN
-	
-	BEGIN TRANSACTION
-	BEGIN TRY
-		-- Kiểm tra xem đã tồn tại hay chưa
-		IF NOT EXISTS (SELECT * FROM NhaXuatBan WHERE MaNXB =@MaNXB)
-		BEGIN
-			-- Nếu chưa tồn tại, thêm mới nha xuat ban
-			INSERT INTO NhaXuatBan(MaNXB, TenNXB, DiaChiNXB,LienHe)
-			VALUES (@MaNXB, @TenNXB,@DiaChiNXB, @LienHe)
-		END
-		COMMIT TRAN
-
-	END TRY
-	BEGIN CATCH
-		ROLLBACK
-		DECLARE @err NVARCHAR(MAX)
-		SELECT @err = ERROR_MESSAGE()
-		RAISERROR(@err, 16, 1)
-	END CATCH
-END
-
--- proc sửa NhaXuatBan
-go
-CREATE PROCEDURE SuaNhaXuatBan
-	@MaNXB nchar(10),
-	@TenNXB nvarchar(50),
-	@DiaChiNXB nvarchar(100),
-	@LienHe nvarchar(15)
-	
-AS
-BEGIN
-	BEGIN TRY
-		UPDATE dbo.NhaXuatBan SET MaNXB = @MaNXB, TenNXB = @TenNXB, DiaChiNXB= @DiaChiNXB, LienHe = @LienHe
-		WHERE MaNXB = @MaNXB
-	END TRY
-	BEGIN CATCH
-		DECLARE @err NVARCHAR(MAX)
-		SELECT @err = ERROR_MESSAGE()
-		RAISERROR(@err, 16, 1)
-	END CATCH
-END
-
 -- PHẦN STORED PROCEDURE =================================================================================
 -- 1. Tạo Proc CRUD sách
 -- 1.a Thêm sách
@@ -591,6 +502,7 @@ BEGIN
 	WHERE MaPhieuNhap = @MaPhieuNhap AND MaSach = @MaSach
 END
 
+--4.1 func tính doanh thu theo ngày tháng năm
 go
 CREATE FUNCTION func_tinhDoanhThuNgay(@ngay INT, @thang INT, @nam INT)
 RETURNS FLOAT
@@ -621,4 +533,93 @@ BEGIN
 	 FROM HoaDon
 	 WHERE YEAR(NgayInHD) = @nam;
 	 RETURN @doanhThu;
-END;
+END;
+
+--4.2 CRUD bảng NXB
+--trigger phat hien da co nha xuat ban nay
+go 
+CREATE TRIGGER trg_InsertNhaXuatBan
+ON NhaXuatBan
+FOR INSERT, UPDATE
+AS
+BEGIN
+-- check MaKH
+	IF EXISTS (SELECT * FROM inserted WHERE TRIM(MaNXB) = ' ')
+	BEGIN
+		RAISERROR('Mã NXB không được để trống', 16, 1)
+		ROLLBACK 
+		RETURN
+	END
+	IF NOT EXISTS (SELECT * FROM NhaXuatBan WHERE MaNXB IN (SELECT MaNXB FROM inserted))
+	BEGIN
+		RAISERROR('Mã NXB đã tồn tại', 16, 1)
+		ROLLBACK 
+		RETURN
+	END
+	-- check ten NXB
+	IF EXISTS (SELECT * FROM inserted WHERE TRIM(TenNXB) = ' ')
+	BEGIN
+		RAISERROR('Tên NXB không được để trống', 16, 1)
+		ROLLBACK 
+		RETURN
+	END
+	-- check SDT
+	IF EXISTS (SELECT * FROM inserted WHERE TRIM(LienHe) = ' ')
+	BEGIN
+		RAISERROR('Liên hệ không được để trống', 16, 1)
+		ROLLBACK 
+		RETURN
+	END
+END
+go
+-- proc thêm
+CREATE PROCEDURE ThemNhaXuatBan
+	@MaNXB nchar(10),
+	@TenNXB nvarchar(50),
+	@DiaChiNXB nvarchar(100),
+	@LienHe nvarchar(15)
+	
+AS
+BEGIN
+	
+	BEGIN TRANSACTION
+	BEGIN TRY
+		-- Kiểm tra xem đã tồn tại hay chưa
+		IF NOT EXISTS (SELECT * FROM NhaXuatBan WHERE MaNXB =@MaNXB)
+		BEGIN
+			-- Nếu chưa tồn tại, thêm mới nha xuat ban
+			INSERT INTO NhaXuatBan(MaNXB, TenNXB, DiaChiNXB,LienHe)
+			VALUES (@MaNXB, @TenNXB,@DiaChiNXB, @LienHe)
+		END
+		COMMIT TRAN
+
+	END TRY
+	BEGIN CATCH
+		ROLLBACK
+		DECLARE @err NVARCHAR(MAX)
+		SELECT @err = ERROR_MESSAGE()
+		RAISERROR(@err, 16, 1)
+	END CATCH
+END
+
+-- proc sửa NhaXuatBan
+go
+CREATE PROCEDURE SuaNhaXuatBan
+	@MaNXB nchar(10),
+	@TenNXB nvarchar(50),
+	@DiaChiNXB nvarchar(100),
+	@LienHe nvarchar(15)
+	
+AS
+BEGIN
+	BEGIN TRY
+		UPDATE dbo.NhaXuatBan SET MaNXB = @MaNXB, TenNXB = @TenNXB, DiaChiNXB= @DiaChiNXB, LienHe = @LienHe
+		WHERE MaNXB = @MaNXB
+	END TRY
+	BEGIN CATCH
+		DECLARE @err NVARCHAR(MAX)
+		SELECT @err = ERROR_MESSAGE()
+		RAISERROR(@err, 16, 1)
+	END CATCH
+END
+
