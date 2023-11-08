@@ -350,7 +350,7 @@ GO
 
 -- 3. Xem chi tiết các phiếu nhập
 CREATE VIEW V_ChiTietCacPhieuNhap AS
-SELECT pn.MaNXB, pn.NgayNhap, ctpn.MaSach, ctpn.SoLuongNhap
+SELECT pn.MaPhieuNhap, pn.MaNXB, pn.NgayNhap, ctpn.MaSach, ctpn.SoLuongNhap
 FROM PhieuNhap pn INNER JOIN ChiTietPhieuNhap ctpn ON pn.MaPhieuNhap = ctpn.MaPhieuNhap
 GO
 
@@ -698,8 +698,139 @@ begin
 end
 go
 
-select * from Sach
-select * from ChiTietHoaDon
-select * from HoaDon
+--4.1 func tính doanh thu theo ngày tháng năm
+go
+CREATE FUNCTION func_tinhDoanhThuNgay(@ngay INT, @thang INT, @nam INT)
+RETURNS FLOAT
+	AS
+	BEGIN
+		 DECLARE @doanhThu FLOAT = 0;
+		 SELECT @doanhThu = COALESCE(SUM(TongHD), 0)
+		 FROM HoaDon
+		 WHERE DAY(NgayInHD) = @ngay AND MONTH(NgayInHD) = @thang AND YEAR(NgayInHD) = @nam;
+	 RETURN @doanhThu;
+END;
+go
+CREATE FUNCTION func_tinhDoanhThuThang(@thang INT, @nam INT) 
+RETURNS float
+BEGIN
+	 DECLARE @doanhThu float = 0;
+	 SELECT @doanhthu = COALESCE(SUM(TongHD), 0)
+	 FROM HoaDon
+	 WHERE MONTH(NgayInHD) = @thang AND YEAR(NgayInHD) = @nam;
+	 RETURN @doanhThu;
+END;
+go
+CREATE FUNCTION func_tinhDoanhThuNam(@nam INT) 
+RETURNS float
+BEGIN
+	DECLARE @doanhThu float = 0;
+	 SELECT @doanhthu = COALESCE(SUM(TongHD), 0)
+	 FROM HoaDon
+	 WHERE YEAR(NgayInHD) = @nam;
+	 RETURN @doanhThu;
+END;
 
------END----------------------------------------------------
+--4.2 CRUD bảng NXB
+--trigger phat hien da co nha xuat ban nay
+go 
+CREATE TRIGGER trg_InsertNhaXuatBan
+ON NhaXuatBan
+FOR INSERT, UPDATE
+AS
+BEGIN
+-- check MaKH
+	IF EXISTS (SELECT * FROM inserted WHERE TRIM(MaNXB) = ' ')
+	BEGIN
+		RAISERROR('Mã NXB không được để trống', 16, 1)
+		ROLLBACK 
+		RETURN
+	END
+	IF NOT EXISTS (SELECT * FROM NhaXuatBan WHERE MaNXB IN (SELECT MaNXB FROM inserted))
+	BEGIN
+		RAISERROR('Mã NXB đã tồn tại', 16, 1)
+		ROLLBACK 
+		RETURN
+	END
+	-- check ten NXB
+	IF EXISTS (SELECT * FROM inserted WHERE TRIM(TenNXB) = ' ')
+	BEGIN
+		RAISERROR('Tên NXB không được để trống', 16, 1)
+		ROLLBACK 
+		RETURN
+	END
+	-- check SDT
+	IF EXISTS (SELECT * FROM inserted WHERE TRIM(LienHe) = ' ')
+	BEGIN
+		RAISERROR('Liên hệ không được để trống', 16, 1)
+		ROLLBACK 
+		RETURN
+	END
+END
+go
+-- proc thêm
+CREATE PROCEDURE ThemNhaXuatBan
+	@MaNXB nchar(10),
+	@TenNXB nvarchar(50),
+	@DiaChiNXB nvarchar(100),
+	@LienHe nvarchar(15)
+	
+AS
+BEGIN
+	
+	BEGIN TRANSACTION
+	BEGIN TRY
+		-- Kiểm tra xem đã tồn tại hay chưa
+		IF NOT EXISTS (SELECT * FROM NhaXuatBan WHERE MaNXB =@MaNXB)
+		BEGIN
+			-- Nếu chưa tồn tại, thêm mới nha xuat ban
+			INSERT INTO NhaXuatBan(MaNXB, TenNXB, DiaChiNXB,LienHe)
+			VALUES (@MaNXB, @TenNXB,@DiaChiNXB, @LienHe)
+		END
+		COMMIT TRAN
+
+	END TRY
+	BEGIN CATCH
+		ROLLBACK
+		DECLARE @err NVARCHAR(MAX)
+		SELECT @err = ERROR_MESSAGE()
+		RAISERROR(@err, 16, 1)
+	END CATCH
+END
+
+-- proc sửa NhaXuatBan
+go
+CREATE PROCEDURE SuaNhaXuatBan
+	@MaNXB nchar(10),
+	@TenNXB nvarchar(50),
+	@DiaChiNXB nvarchar(100),
+	@LienHe nvarchar(15)
+	
+AS
+BEGIN
+	BEGIN TRY
+		UPDATE dbo.NhaXuatBan SET MaNXB = @MaNXB, TenNXB = @TenNXB, DiaChiNXB= @DiaChiNXB, LienHe = @LienHe
+		WHERE MaNXB = @MaNXB
+	END TRY
+	BEGIN CATCH
+		DECLARE @err NVARCHAR(MAX)
+		SELECT @err = ERROR_MESSAGE()
+		RAISERROR(@err, 16, 1)
+	END CATCH
+END
+
+-- PHẦN FUNCTION =================================================================================
+-- 1. Function lấy bảng sách
+GO
+CREATE FUNCTION Func_LayBangSach()
+RETURNS TABLE
+AS 
+	RETURN (SELECT * FROM Sach)
+
+
+-- 2. Function lấy bảng phiếu nhập
+GO
+CREATE FUNCTION Func_LayBangPhieuNhap()
+RETURNS TABLE
+AS 
+	RETURN (SELECT * FROM PhieuNhap)
