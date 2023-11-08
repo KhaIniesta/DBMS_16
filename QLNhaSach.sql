@@ -818,6 +818,89 @@ BEGIN
 		RAISERROR(@err, 16, 1)
 	END CATCH
 END
+-- Tạo Proc CRUD tác giả
+--a/ Thêm tác giả
+CREATE PROCEDURE ThemTacGia
+    @MaTG NCHAR(10),
+    @MaNXB NCHAR(10),
+    @TenTG NVARCHAR(50),
+    @LienHe NCHAR(15)
+AS
+BEGIN
+    INSERT INTO TacGia (MaTG, MaNXB, TenTG, LienHe)
+    VALUES (@MaTG, @MaNXB, @TenTG, @LienHe)
+END
+
+--b/ Cập nhật thông tin tác giả
+CREATE PROCEDURE CapNhatTacGia
+    @MaTG NCHAR(10),
+    @MaNXB NCHAR(10),
+    @TenTG NVARCHAR(50),
+    @LienHe NCHAR(15)
+AS
+BEGIN
+    UPDATE TacGia
+    SET MaNXB = @MaNXB, TenTG = @TenTG, LienHe = @LienHe
+    WHERE MaTG = @MaTG
+END
+
+--c/ Xóa tác giả
+CREATE PROCEDURE XoaTacGia
+    @MaTG NCHAR(10)
+AS
+BEGIN
+    DELETE FROM TacGia
+    WHERE MaTG = @MaTG
+END
+
+-- Tạo Func tìm kiếm sách
+--a/ Tìm kiếm sách theo tên
+CREATE FUNCTION TimKiemSachTheoTen
+    (@TenSach NVARCHAR(100))
+RETURNS TABLE
+AS
+RETURN
+    SELECT *
+    FROM Sach
+    WHERE TenSach LIKE '%' + @TenSach + '%'
+
+
+
+--b/ Tìm kiếm sách theo tác giả
+CREATE FUNCTION TimKiemSachTheoTacGia
+    (@TenTacGia NVARCHAR(50))
+RETURNS TABLE
+AS
+RETURN
+    SELECT Sach.*
+    FROM Sach
+    INNER JOIN TacGia ON Sach.MaTG = TacGia.MaTG
+    WHERE TacGia.TenTG LIKE '%' + @TenTacGia + '%'
+
+
+
+--c/ Tìm kiếm sách theo thể loại
+CREATE FUNCTION TimKiemSachTheoTheLoai
+    (@TenTheLoai NVARCHAR(50))
+RETURNS TABLE
+AS
+RETURN
+    SELECT *
+    FROM Sach
+    WHERE TheLoai LIKE '%' + @TenTheLoai + '%'
+
+
+
+--d/ Tìm kiếm sách theo giá
+CREATE FUNCTION TimKiemSachTheoGia
+    (@GiaMin MONEY,
+     @GiaMax MONEY)
+RETURNS TABLE
+AS
+RETURN
+    SELECT *
+    FROM Sach
+    WHERE Gia BETWEEN @GiaMin AND @GiaMax
 
 -- PHẦN FUNCTION =================================================================================
 -- 1. Function lấy bảng sách
