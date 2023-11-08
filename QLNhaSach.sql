@@ -24,7 +24,8 @@ CREATE TABLE Sach(
     TenSach NVARCHAR(100) NOT NULL, 
     SoLuongSach INT NOT NULL CHECK(SoLuongSach >= 0), 
     Gia MONEY NOT NULL CHECK(Gia > 0), 
-    TheLoai NVARCHAR(50) NOT NULL
+    TheLoai NVARCHAR(50) NOT NULL,
+    Anh IMAGE
 )
 
 CREATE TABLE PhieuNhap(
@@ -385,10 +386,11 @@ CREATE PROCEDURE Proc_ThemSach
 	@TenSach NVARCHAR(100),
 	@SoLuongSach INT,
 	@Gia MONEY,
-    @TheLoai NVARCHAR(50)
+    @TheLoai NVARCHAR(50),
+    @Anh IMAGE = NULL
 AS
 BEGIN
-	INSERT INTO Sach VALUES(@MaSach, @MaTG, @MaNXB, @TenSach, @SoLuongSach, @Gia, @TheLoai)
+	INSERT INTO Sach VALUES(@MaSach, @MaTG, @MaNXB, @TenSach, @SoLuongSach, @Gia, @TheLoai, @Anh)
 END
 
 -- 1.b Sửa sách:
@@ -400,7 +402,8 @@ CREATE PROCEDURE Proc_SuaSach
 	@TenSach NVARCHAR(100),
 	@SoLuongSach INT,
 	@Gia MONEY,
-    @TheLoai NVARCHAR(50)
+    @TheLoai NVARCHAR(50),
+    @Anh IMAGE = NULL
 AS
 BEGIN
 	UPDATE Sach
@@ -410,7 +413,8 @@ BEGIN
 		TenSach = @TenSach,
 		SoLuongSach = @SoLuongSach,
 		Gia = @Gia,
-		TheLoai = @TheLoai
+		TheLoai = @TheLoai,
+        Anh = @Anh
 	WHERE MaSach = @MaSach
 END
 
