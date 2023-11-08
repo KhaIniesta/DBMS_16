@@ -355,25 +355,36 @@ FROM PhieuNhap pn INNER JOIN ChiTietPhieuNhap ctpn ON pn.MaPhieuNhap = ctpn.MaPh
 GO
 
 -- 4.a View xuat tong doanh thu theo ngay
-go
+
 create view V_DTNgay as
-select Day(NgayInHD) Ngay, Month(NgayInHD) Thang, Year(NgayInHD) Nam, sum(TongHD) DoanhThuNgay from HoaDon group by Day(NgayInHD),Month(NgayInHD), Year(NgayInHD)
+select MaHD, Year(NgayInHD) Nam, Month(NgayInHD) Thang, Day(NgayInHD) Ngay from HoaDon
+go
 
 -- 4.b View xuat tong doanh thu theo thang
-go
 create view V_DTThang as
-select Month(NgayInHD) Thang, Year(NgayInHD) Nam, sum(TongHD) DoanhThuThang from HoaDon group by Month(NgayInHD), Year(NgayInHD)
+select MaHD, Year(NgayInHD) Nam, Month(NgayInHD) Thang, Day(NgayInHD) Ngay from HoaDon
+go
 
 -- 4.c View xuat tong doanh thu theo nam
-go
 create view V_DTNam as
-select Year(NgayInHD) Nam, sum(TongHD) DoanhThuNam from HoaDon group by Year(NgayInHD)
+select MaHD, Year(NgayInHD) Nam, Month(NgayInHD) Thang from HoaDon
+go
 
 -- 5. View xem so luong sach da ban trong ngay 
-go
 create view V_SoLuongSachBanTrongNgay as
 select ChiTietHoaDon.MaSach,sum(SoLuongBan) TongSoLuongBan from HoaDon join ChiTietHoaDon on HoaDon.MaHD = ChiTietHoaDon.MaHD 
 where (select cast(NgayInHD as date) ngayInHD from HoaDon) = cast(GetDate() as date) group by ChiTietHoaDon.MaSach
+go
+
+-- 6. View hiển thị chi tiết sách trong chi tiết hóa đơn
+create view V_HienChiTietSach
+as
+	select Sach.MaSach, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, Sach.SoLuongSach, Sach.Gia, Sach.TenSach, Sach.Anh
+	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach 
+	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
+	join TacGia on Sach.MaTG = TacGia.MaTG
+	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
+go
 
 -- PHẦN STORED PROCEDURE =================================================================================
 -- 1. Tạo Proc CRUD sách
@@ -501,7 +512,191 @@ BEGIN
 	DELETE ChiTietPhieuNhap 
 	WHERE MaPhieuNhap = @MaPhieuNhap AND MaSach = @MaSach
 END
+go
+-- Proc cho CRUD bảng HoaDon
+-- Xuất thông tin hóa đơn
+create procedure Proc_HienHoaDon 
+as
+begin
+	select * from HoaDon
+end
+go
 
+-- Hiện toàn bộ mã hóa đơn
+create procedure Proc_TimKiemMaHD
+as
+begin
+	select distinct MaHD, TongHD from HoaDon order by MaHD 
+end
+go
+
+-- Tìm kiếm theo mã hóa đơn trong bảng hóa đơn
+create procedure Proc_TimKiemTheoMaHD
+	@MaHD nchar(15)
+as
+begin
+	select TongHD from HoaDon where MaHD = @MaHD
+end
+go
+
+-- Thêm mã hóa đơn
+create procedure Proc_ThemMaHoaDon 
+as
+begin
+	declare @MaHD nchar(15), @ngayThang DATE
+	set @ngayThang = getDate()
+	set @MaHD = 'HD' + format(getdate(), 'yyyyMMddhhmmss')
+	insert into HoaDon(MaHD, NgayInHD) values(@MaHD, @ngayThang)
+
+	select MaHD from HoaDon where MaHD = @MaHD
+end
+go
+
+-- Cập nhật hóa đơn
+create procedure Proc_CapNhatHoaDon
+	@MaHD nchar(15),
+	@NgayInHoaDon datetime
+as
+begin
+	update HoaDon set MaHD = @MaHD, NgayInHD = @NgayInHoaDon
+end
+go
+
+-- Xóa hóa đơn
+create procedure Proc_XoaHoaDon
+	@MaHD nchar(15)
+as
+begin
+	delete from ChiTietHoaDon where MaHD = @MaHD
+	delete from HoaDon where MaHD = @MaHD
+end
+go
+
+-- Tìm kiếm toàn bộ Mã sách
+create procedure Proc_TimKiemMaSach
+as
+begin
+	select distinct MaSach from Sach order by MaSach 
+end
+go
+
+create procedure Proc_TimKiemTenSach
+as
+begin
+	select TenSach from Sach
+end
+go
+
+-- Hiển thị chi tiết sách
+create procedure Proc_HienChiTietSach
+as
+begin
+	select Sach.MaSach, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, Sach.SoLuongSach, Sach.Gia, Sach.TenSach, Sach.Anh
+	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach 
+	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
+	join TacGia on Sach.MaTG = TacGia.MaTG
+	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
+end
+go
+
+-- Hiển thị sách theo mã sách
+create procedure Proc_HienSachtheoMaSach
+	@MaSach nchar(10)
+as
+begin
+	select Sach.MaSach, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, Sach.SoLuongSach, Sach.Gia, Sach.TenSach
+	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach 
+	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
+	join TacGia on Sach.MaTG = TacGia.MaTG
+	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
+	where Sach.MaSach = @MaSach
+end
+go
+
+-- Proc cho CRUD bảng ChiTietHoaDon
+-- Hiển thị chi tiết hóa đơn
+create procedure Proc_HienCTHD
+as
+begin
+	select Sach.MaSach , HoaDon.MaHD , TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, ChiTietHoaDon.SoLuongBan, Sach.Gia, Sach.TenSach, Sach.Anh
+	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach
+	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
+	join TacGia on Sach.MaTG = TacGia.MaTG
+	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
+end
+go
+
+-- Hiện CTHD theo mã hóa đơn
+create procedure Proc_HienCTHDTheoMaHD @MaHD nchar(15)
+as
+begin
+	select Sach.MaSach, HoaDon.MaHD, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, ChiTietHoaDon.SoLuongBan, Sach.Gia,	Sach.TenSach, Sach.Anh
+	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach 
+	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
+	join TacGia on Sach.MaTG = TacGia.MaTG
+	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
+	where HoaDon.MaHD = @MaHD
+end
+go
+
+create procedure Proc_HienCTHDTheoTenSach @TenSach nchar(100)
+as
+begin
+	select Sach.MaSach, HoaDon.MaHD, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, ChiTietHoaDon.SoLuongBan, Sach.Gia,	Sach.TenSach, Sach.Anh
+	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach 
+	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
+	join TacGia on Sach.MaTG = TacGia.MaTG
+	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
+	where Sach.TenSach = @TenSach
+end
+go
+
+
+-- Thêm sách cho chi tiết hóa đơn
+create procedure Proc_ThemSachCTHD
+	@MaHD nchar(15), 
+	@MaSach nchar(10), 
+	@SoLuongBan int
+as
+begin
+	begin try
+	insert into ChiTietHoaDon(MaHD, MaSach, SoLuongBan) values(@MaHD, @MaSach, @SoLuongBan)
+	end try
+	begin catch
+		declare @err NVARCHAR(MAX)
+		select @err = ERROR_MESSAGE()
+		raiserror(@err, 16, 1)
+	end catch
+end
+go
+
+-- Xóa sách cho chi tiết hóa đơn
+create procedure Proc_CapNhatSachCTHD
+	@MaHD nchar(15), 
+	@MaSach nchar(10), 
+	@SoLuongBan int
+as
+begin
+	begin try
+	update ChiTietHoaDon set SoLuongBan =  @SoLuongBan where MaHD = @MaHD and MaSach = @MaSach 
+	end try
+	begin catch
+		declare @err NVARCHAR(MAX)
+		select @err = ERROR_MESSAGE()
+		raiserror(@err, 16, 1)
+	end catch
+end
+go
+
+-- Cập nhật sách cho chi tiết hóa đơn
+create procedure Proc_XoaSachCTHD
+	@MaHD nchar(15),
+	@MaSach nchar(10)
+as
+begin
+	delete from ChiTietHoaDon where MaHD = @MaHD and MaSach = @MaSach
+end
+go
 
 --4.1 func tính doanh thu theo ngày tháng năm
 go
