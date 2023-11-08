@@ -12,30 +12,31 @@ CREATE TABLE NhaXuatBan (
 
 CREATE TABLE TacGia(
     MaTG NCHAR(10) PRIMARY KEY, 
-    MaNXB NCHAR(10) REFERENCES NhaXuatBan(MaNXB), 
+    MaNXB NCHAR(10) REFERENCES NhaXuatBan(MaNXB) ON DELETE SET NULL ON UPDATE CASCADE, 
     TenTG NVARCHAR(50) NOT NULL, 
     LienHe NCHAR(15)
 )
 
 CREATE TABLE Sach(
     MaSach NCHAR(10) PRIMARY KEY, 
-    MaTG NCHAR(10) REFERENCES TacGia(MaTG), 
-    MaNXB NCHAR(10) REFERENCES NhaXuatBan(MaNXB), 
+    MaTG NCHAR(10) REFERENCES TacGia(MaTG) ON DELETE SET NULL ON UPDATE CASCADE, 
+    MaNXB NCHAR(10) REFERENCES NhaXuatBan(MaNXB) ON DELETE SET NULL ON UPDATE CASCADE, 
     TenSach NVARCHAR(100) NOT NULL, 
     SoLuongSach INT NOT NULL CHECK(SoLuongSach >= 0), 
     Gia MONEY NOT NULL CHECK(Gia > 0), 
-    TheLoai NVARCHAR(50) NOT NULL
+    TheLoai NVARCHAR(50) NOT NULL,
+    Anh IMAGE
 )
 
 CREATE TABLE PhieuNhap(
     MaPhieuNhap NCHAR(10) PRIMARY KEY, 
-    MaNXB NCHAR(10) REFERENCES NhaXuatBan(MaNXB), 
+    MaNXB NCHAR(10) REFERENCES NhaXuatBan(MaNXB) ON DELETE SET NULL ON UPDATE CASCADE, 
     NgayNhap DATETIME NOT NULL 
 )
 
 CREATE TABLE ChiTietPhieuNhap(
-    MaPhieuNhap NCHAR(10) REFERENCES PhieuNhap(MaPhieuNhap), 
-    MaSach NCHAR(10) REFERENCES Sach(MaSach), 
+    MaPhieuNhap NCHAR(10) REFERENCES PhieuNhap(MaPhieuNhap) ON DELETE SET NULL ON UPDATE CASCADE, 
+    MaSach NCHAR(10) REFERENCES Sach(MaSach) ON DELETE SET NULL ON UPDATE CASCADE, 
     SoLuongNhap INT NOT NULL CHECK (SoLuongNhap > 0),
     PRIMARY KEY (MaPhieuNhap, MaSach)
 )
@@ -47,8 +48,8 @@ CREATE TABLE HoaDon(
 )
 
 CREATE TABLE ChiTietHoaDon(
-    MaHD NCHAR(15) REFERENCES HoaDon(MaHD), 
-    MaSach NCHAR(10) REFERENCES Sach(MaSach), 
+    MaHD NCHAR(15) REFERENCES HoaDon(MaHD) ON DELETE SET NULL ON UPDATE CASCADE, 
+    MaSach NCHAR(10) REFERENCES Sach(MaSach) ON DELETE SET NULL ON UPDATE CASCADE, 
     SoLuongBan INT CHECK (SoLuongBan > 0), 
     Gia MONEY NOT NULL DEFAULT 0 CHECK(Gia >= 0),
     PRIMARY KEY (MaHD, MaSach)
@@ -373,3 +374,132 @@ go
 create view V_SoLuongSachBanTrongNgay as
 select ChiTietHoaDon.MaSach,sum(SoLuongBan) TongSoLuongBan from HoaDon join ChiTietHoaDon on HoaDon.MaHD = ChiTietHoaDon.MaHD 
 where (select cast(NgayInHD as date) ngayInHD from HoaDon) = cast(GetDate() as date) group by ChiTietHoaDon.MaSach
+
+-- PHẦN STORED PROCEDURE =================================================================================
+-- 1. Tạo Proc CRUD sách
+-- 1.a Thêm sách
+GO 
+CREATE PROCEDURE Proc_ThemSach
+	@MaSach NCHAR(10),
+	@MaTG NCHAR(10),
+	@MaNXB NCHAR(10),
+	@TenSach NVARCHAR(100),
+	@SoLuongSach INT,
+	@Gia MONEY,
+    @TheLoai NVARCHAR(50),
+    @Anh IMAGE = NULL
+AS
+BEGIN
+	INSERT INTO Sach VALUES(@MaSach, @MaTG, @MaNXB, @TenSach, @SoLuongSach, @Gia, @TheLoai, @Anh)
+END
+
+-- 1.b Sửa sách:
+GO 
+CREATE PROCEDURE Proc_SuaSach
+	@MaSach NCHAR(10),
+	@MaTG NCHAR(10),
+	@MaNXB NCHAR(10),
+	@TenSach NVARCHAR(100),
+	@SoLuongSach INT,
+	@Gia MONEY,
+    @TheLoai NVARCHAR(50),
+    @Anh IMAGE = NULL
+AS
+BEGIN
+	UPDATE Sach
+	SET
+		MaTG = @MaTG,
+		MaNXB = @MaNXB,
+		TenSach = @TenSach,
+		SoLuongSach = @SoLuongSach,
+		Gia = @Gia,
+		TheLoai = @TheLoai,
+        Anh = @Anh
+	WHERE MaSach = @MaSach
+END
+
+-- 1.c Xóa sách:
+GO 
+CREATE PROCEDURE Proc_XoaSach
+	@MaSach NCHAR(10)
+AS
+BEGIN
+	DELETE Sach 
+	WHERE MaSach = @MaSach
+END
+
+-- 2. Tạo Proc CRUD phiếu nhập
+-- 2.a Thêm phiếu nhập
+GO 
+CREATE PROCEDURE Proc_ThemPhieuNhap
+	@MaPhieuNhap NCHAR(10), 
+    @MaNXB NCHAR(10), 
+    @NgayNhap DATETIME
+AS
+BEGIN
+	INSERT INTO PhieuNhap VALUES(@MaPhieuNhap, @MaNXB, @NgayNhap)
+END
+
+-- 2.b Sửa phiếu nhập
+GO 
+CREATE PROCEDURE Proc_SuaPhieuNhap
+	@MaPhieuNhap NCHAR(10), 
+    @MaNXB NCHAR(10), 
+    @NgayNhap DATETIME
+AS
+BEGIN
+	UPDATE PhieuNhap
+	SET
+		@MaNXB = @MaNXB, 
+		NgayNhap = @NgayNhap
+	WHERE MaPhieuNhap = @MaPhieuNhap
+END
+
+-- 2.c Xóa phiếu nhập
+GO 
+CREATE PROCEDURE Proc_XoaPhieuNhap
+	@MaPhieuNhap NCHAR(10)
+AS
+BEGIN
+	DELETE PhieuNhap 
+	WHERE MaPhieuNhap = @MaPhieuNhap
+END
+
+-- 3. Tạo Proc CRUD chi tiết phiếu nhập phiếu nhập
+-- 3.a Thêm chi tiết phiếu nhập
+GO 
+CREATE PROCEDURE Proc_ThemChiTietPhieuNhap
+	@MaPhieuNhap NCHAR(10), 
+    @MaSach NCHAR(10), 
+    @SoLuongNhap INT
+AS
+BEGIN
+	INSERT INTO ChiTietPhieuNhap VALUES(@MaPhieuNhap, @MaSach,  @SoLuongNhap)
+END
+
+-- 3.b Sửa chi tiết phiếu nhập
+GO 
+CREATE PROCEDURE Proc_SuaChiTietPhieuNhap
+	@MaPhieuNhap NCHAR(10), 
+    @MaSach NCHAR(10), 
+    @SoLuongNhap INT
+AS
+BEGIN
+	UPDATE ChiTietPhieuNhap
+	SET
+		SoLuongNhap = @SoLuongNhap
+	WHERE MaPhieuNhap = @MaPhieuNhap AND MaSach = @MaSach
+END
+
+-- 3.c Xóa chi tiết phiếu nhập
+GO 
+CREATE PROCEDURE Proc_XoaChiTietPhieuNhap
+	@MaPhieuNhap NCHAR(10), 
+    @MaSach NCHAR(10)
+AS
+BEGIN
+	DELETE ChiTietPhieuNhap 
+	WHERE MaPhieuNhap = @MaPhieuNhap AND MaSach = @MaSach
+END
+
+
