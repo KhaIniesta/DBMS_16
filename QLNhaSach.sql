@@ -698,10 +698,6 @@ begin
 end
 go
 
-select * from Sach
-select * from ChiTietHoaDon
-select * from HoaDon
-
 -----END----------------------------------------------------
 
 CREATE FUNCTION func_tinhDoanhThuNgay(@ngay INT, @thang INT, @nam INT)
@@ -734,3 +730,9 @@ BEGIN
 	 WHERE YEAR(NgayInHD) = @nam;
 	 RETURN @doanhThu;
 END;
+
+drop function func_tinhDoanhThuNam
+select * from HoaDon
+select dbo.func_tinhDoanhThuNgay(2,9,2023)
+select dbo.func_tinhDoanhThuThang(9,2023)
+select dbo.func_tinhDoanhThuNam(2023)
