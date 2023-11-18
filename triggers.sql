@@ -1,5 +1,5 @@
 -- PHẦN TẠO CÁC TRIGGER:==========================================================================
-
+use QLNhaSach
 -- 1. Kiểm tra thông tin sách lúc nhập kho có bị trùng không, nếu mã sách đã tồn tại và mã nxb của sách đúng với mã nxb ở phiếu nhập tương ứng thì tăng số lượng sách trong bảng sách
 IF OBJECT_ID ('Trigger_TangSoLuongSach', 'TR') IS NOT NULL 
   DROP TRIGGER TG_Trigger_TangSoLuongSach; 

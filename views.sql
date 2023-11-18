@@ -1,5 +1,5 @@
 -- PHẦN VIEW =================================================================================
-
+use QLNhaSach
 -- 1. Xem các thông tin sách trong kho
 GO
 CREATE VIEW V_ThongTinSachTrongKho AS
