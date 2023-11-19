@@ -44,9 +44,10 @@ go
 -- 6. View hiển thị chi tiết sách trong chi tiết hóa đơn
 create view V_HienChiTietSach
 as
-	select Sach.MaSach, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, Sach.SoLuongSach, Sach.Gia, Sach.TenSach, Sach.Anh
+	select top(99.99) percent Sach.MaSach, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, Sach.SoLuongSach, Sach.Gia, Sach.TenSach, Sach.Anh
 	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach 
 	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
 	join TacGia on Sach.MaTG = TacGia.MaTG
 	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
+	order by Sach.TenSach
 go
