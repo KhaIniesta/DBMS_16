@@ -1,4 +1,5 @@
 -- PHẦN STORED PROCEDURE =================================================================================
+use QLNhaSach
 -- 1. Tạo Proc CRUD sách
 -- 1.a Thêm sách
 GO 
@@ -90,9 +91,9 @@ go
 create procedure Proc_TimKiemTenSach
 as
 begin
-	select TenSach from Sach
+	select TenSach from Sach order by TenSach
 end
-go
+go 
 -- 2. Tạo Proc CRUD phiếu nhập
 -- 2.a Thêm phiếu nhập
 GO 
@@ -115,7 +116,7 @@ AS
 BEGIN
 	UPDATE PhieuNhap
 	SET
-		@MaNXB = @MaNXB, 
+		MaNXB = @MaNXB, 
 		NgayNhap = @NgayNhap
 	WHERE MaPhieuNhap = @MaPhieuNhap
 END
@@ -126,8 +127,8 @@ CREATE PROCEDURE Proc_XoaPhieuNhap
 	@MaPhieuNhap NCHAR(10)
 AS
 BEGIN
-	DELETE PhieuNhap 
-	WHERE MaPhieuNhap = @MaPhieuNhap
+    DELETE PhieuNhap 
+    WHERE MaPhieuNhap = @MaPhieuNhap;
 END
 
 -- 3. Tạo Proc CRUD chi tiết phiếu nhập phiếu nhập
@@ -208,11 +209,10 @@ go
 
 --4.e Cập nhật hóa đơn
 create procedure Proc_CapNhatHoaDon
-	@MaHD nchar(15),
-	@NgayInHoaDon datetime
+	@MaHD nchar(15)
 as
 begin
-	update HoaDon set MaHD = @MaHD, NgayInHD = @NgayInHoaDon
+	update HoaDon set NgayInHD = GETDATE() where MaHD = @MaHD
 end
 go
 
@@ -235,9 +235,9 @@ begin
 	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
 	join TacGia on Sach.MaTG = TacGia.MaTG
 	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
+	order by HoaDon.MaHD
 end
 go
-
 --5.b Hiện CTHD theo mã hóa đơn
 create procedure Proc_HienCTHDTheoMaHD @MaHD nchar(15)
 as
@@ -308,6 +308,8 @@ begin
 	delete from ChiTietHoaDon where MaHD = @MaHD and MaSach = @MaSach
 end
 
+-- 6. Nhà xuất bản:
+-- Thêm nhà xuất bản
 Go
 CREATE PROCEDURE ThemNhaXuatBan
 	@MaNXB nchar(10),
@@ -358,7 +360,8 @@ BEGIN
 		RAISERROR(@err, 16, 1)
 	END CATCH
 END
--- Tạo Proc CRUD tác giả
+
+-- 7. Tạo Proc CRUD tác giả
 --a/ Thêm tác giả
 GO
 CREATE PROCEDURE ThemTacGia
@@ -396,3 +399,15 @@ BEGIN
     WHERE MaTG = @MaTG
 END
 GO
+
+-- Proc xuất hóa đơn ra report
+create procedure Proc_XuatHoaDon
+	@MaHD nchar(15)
+as
+begin
+	select hd.MaHD, s.MaSach, s.TenSach, tg.TenTG, nxb.TenNXB, s.TheLoai, cthd.SoLuongBan, cthd.Gia, hd.TongHD, hd.NgayInHD 
+	from ChiTietHoaDon cthd join HoaDon hd on cthd.MaHD = hd.MaHD join Sach s on s.MaSach = cthd.MaSach 
+		join TacGia tg on s.MaTG = tg.MaTG join NhaXuatBan nxb on s.MaNXB = nxb.MaNXB
+	where hd.MaHD = @MaHD
+end
+go

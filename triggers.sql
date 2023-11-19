@@ -1,5 +1,4 @@
 -- PHẦN TẠO CÁC TRIGGER:==========================================================================
-
 use QLNhaSach
 -- 1. Kiểm tra thông tin sách lúc nhập kho có bị trùng không, nếu mã sách đã tồn tại và mã nxb của sách đúng với mã nxb ở phiếu nhập tương ứng thì tăng số lượng sách trong bảng sách
 IF OBJECT_ID ('Trigger_TangSoLuongSach', 'TR') IS NOT NULL 
@@ -7,7 +6,7 @@ IF OBJECT_ID ('Trigger_TangSoLuongSach', 'TR') IS NOT NULL
 GO
 CREATE TRIGGER TG_Trigger_TangSoLuongSach
 ON ChiTietPhieuNhap
-AFTER INSERT
+INSTEAD OF INSERT
 AS
 BEGIN
     -- Kiểm tra và cập nhật số lượng sách
@@ -24,17 +23,20 @@ BEGIN
         WHERE s.MaSach = @MaSach
         AND pn.MaPhieuNhap = @MaPhieuNhap
     )
-    BEGIN
-        -- Tăng số lượng sách
-        UPDATE Sach
-        SET SoLuongSach = SoLuongSach + (SELECT SoLuongNhap FROM inserted WHERE MaPhieuNhap = @MaPhieuNhap AND MaSach = @MaSach)
-        WHERE MaSach = @MaSach
-    END
+		BEGIN
+			-- Tăng số lượng sách
+			UPDATE Sach
+			SET SoLuongSach = SoLuongSach + (SELECT SoLuongNhap FROM inserted WHERE MaPhieuNhap = @MaPhieuNhap AND MaSach = @MaSach)
+			WHERE MaSach = @MaSach
+			RAISERROR('Đã tăng số lượng sách', 16, 1)
+			-- Chèn dữ liệu vào bảng ChiTietPhieuNhap
+			INSERT INTO ChiTietPhieuNhap (MaPhieuNhap, MaSach, SoLuongNhap)
+			SELECT MaPhieuNhap, MaSach, SoLuongNhap FROM inserted
+		END
     ELSE
-    BEGIN
-        -- Nếu không thỏa mãn điều kiện, thực hiện ROLLBACK
-        ROLLBACK;
-    END
+		BEGIN
+			RAISERROR('Sách chưa tồn tại', 16, 1)
+		END
 END
 GO
 
@@ -166,3 +168,83 @@ BEGIN
 		RETURN
 	END
 END
+
+--6. Trigger bảng
+-- Trigger bắt lỗi nhập thiếu thông tin khi thêm, sửa, xoá cho bảng TacGia
+GO
+CREATE TRIGGER TG_Trigger_TacGia_InsUpdDel
+ON TacGia
+AFTER INSERT, UPDATE, DELETE
+AS
+BEGIN
+    -- Kiểm tra lỗi nhập thiếu thông tin khi thêm hoặc sửa
+    IF EXISTS (SELECT * FROM inserted WHERE TRIM(TenTG) = '' OR TRIM(LienHe) = '')
+    BEGIN
+        RAISERROR('Thông tin không đủ khi thêm, sửa, xóa đối tác giả.', 16, 1)
+        ROLLBACK
+        RETURN
+    END
+END
+
+GO
+CREATE TRIGGER TG_Trigger_TacGia_Change
+ON TacGia
+AFTER DELETE, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Xóa các bản ghi trong Sach khi TacGia được xóa
+    IF EXISTS (SELECT * FROM deleted INNER JOIN Sach ON deleted.MaTG = Sach.MaTG)
+    BEGIN
+        DELETE FROM Sach
+        WHERE MaTG IN (SELECT MaTG FROM deleted);
+    END;
+
+    -- Thêm các bản ghi vào Sach khi TacGia được thêm
+    IF EXISTS (SELECT * FROM inserted INNER JOIN Sach ON inserted.MaTG = Sach.MaTG)
+    BEGIN
+        INSERT INTO Sach (MaSach, MaTG, MaNXB, TenSach, SoLuongSach, Gia, TheLoai, Anh)
+        SELECT NEWID(), inserted.MaTG, inserted.MaNXB, inserted.TenTG, 0, 0, '', NULL
+        FROM inserted
+        LEFT JOIN Sach ON inserted.MaTG = Sach.MaTG
+        WHERE Sach.MaTG IS NULL;
+    END;
+
+    -- Cập nhật các bản ghi trong Sach khi TacGia được cập nhật
+    IF EXISTS (SELECT * FROM inserted INNER JOIN Sach ON inserted.MaTG = Sach.MaTG)
+    BEGIN
+        UPDATE Sach
+        SET MaTG = inserted.MaTG
+        FROM Sach
+        INNER JOIN inserted ON Sach.MaTG = inserted.MaTG;
+    END;
+END;
+
+-- Nếu phiếu nhập có xuất hiện bên chi tiết phiếu nhập thì không cho xóa
+IF OBJECT_ID ('TG_PhieuNhap_Delete', 'TR') IS NOT NULL 
+  DROP TRIGGER TG_PhieuNhap_Delete; 
+GO
+CREATE TRIGGER TG_PhieuNhap_Delete
+ON PhieuNhap
+INSTEAD OF DELETE
+AS
+BEGIN
+    DECLARE @DeletedMaPhieuNhap NCHAR(10);
+
+    -- Lấy các MaPhieuNhap bị xóa
+    SELECT @DeletedMaPhieuNhap = MaPhieuNhap
+    FROM DELETED;
+
+    -- Kiểm tra xem có MaPhieuNhap nào được tham chiếu từ ChiTietPhieuNhap không
+    IF EXISTS (SELECT 1 FROM ChiTietPhieuNhap WHERE MaPhieuNhap = @DeletedMaPhieuNhap)
+    BEGIN
+        RAISERROR ('Phiếu nhập đã xuất hiện bên chi tiết phiếu nhập, không thể xóa!', 16, 1);
+    END
+    ELSE
+    BEGIN
+        -- Xóa bản ghi từ bảng PhieuNhap
+        DELETE FROM PhieuNhap WHERE MaPhieuNhap = @DeletedMaPhieuNhap;
+    END
+END;
+
