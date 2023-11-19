@@ -115,7 +115,7 @@ AS
 BEGIN
 	UPDATE PhieuNhap
 	SET
-		@MaNXB = @MaNXB, 
+		MaNXB = @MaNXB, 
 		NgayNhap = @NgayNhap
 	WHERE MaPhieuNhap = @MaPhieuNhap
 END
@@ -126,8 +126,8 @@ CREATE PROCEDURE Proc_XoaPhieuNhap
 	@MaPhieuNhap NCHAR(10)
 AS
 BEGIN
-	DELETE PhieuNhap 
-	WHERE MaPhieuNhap = @MaPhieuNhap
+    DELETE PhieuNhap 
+    WHERE MaPhieuNhap = @MaPhieuNhap;
 END
 
 -- 3. Tạo Proc CRUD chi tiết phiếu nhập phiếu nhập
@@ -308,6 +308,8 @@ begin
 	delete from ChiTietHoaDon where MaHD = @MaHD and MaSach = @MaSach
 end
 
+-- 6. Nhà xuất bản:
+-- Thêm nhà xuất bản
 Go
 CREATE PROCEDURE ThemNhaXuatBan
 	@MaNXB nchar(10),
@@ -358,7 +360,8 @@ BEGIN
 		RAISERROR(@err, 16, 1)
 	END CATCH
 END
--- Tạo Proc CRUD tác giả
+
+-- 7. Tạo Proc CRUD tác giả
 --a/ Thêm tác giả
 GO
 CREATE PROCEDURE ThemTacGia
