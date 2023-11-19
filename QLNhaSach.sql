@@ -350,7 +350,7 @@ GO
 
 -- 3. Xem chi tiết các phiếu nhập
 CREATE VIEW V_ChiTietCacPhieuNhap AS
-SELECT pn.MaPhieuNhap, pn.MaNXB, pn.NgayNhap, ctpn.MaSach, ctpn.SoLuongNhap
+SELECT pn.MaNXB, pn.NgayNhap, ctpn.MaSach, ctpn.SoLuongNhap
 FROM PhieuNhap pn INNER JOIN ChiTietPhieuNhap ctpn ON pn.MaPhieuNhap = ctpn.MaPhieuNhap
 GO
 
@@ -439,48 +439,6 @@ BEGIN
 	WHERE MaSach = @MaSach
 END
 
---1.d Hiển thị chi tiết sách
-GO
-create procedure Proc_HienChiTietSach
-as
-begin
-	select Sach.MaSach, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, Sach.SoLuongSach, Sach.Gia, Sach.TenSach, Sach.Anh
-	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach 
-	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
-	join TacGia on Sach.MaTG = TacGia.MaTG
-	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
-end
-go
-
---1.e Hiển thị sách theo mã sách
-create procedure Proc_HienSachtheoMaSach
-	@MaSach nchar(10)
-as
-begin
-	select Sach.MaSach, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, Sach.SoLuongSach, Sach.Gia, Sach.TenSach
-	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach 
-	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
-	join TacGia on Sach.MaTG = TacGia.MaTG
-	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
-	where Sach.MaSach = @MaSach
-end
-go
-
-
---4.f Tìm kiếm toàn bộ Mã sách
-create procedure Proc_TimKiemMaSach
-as
-begin
-	select distinct MaSach from Sach order by MaSach 
-end
-go
-
-create procedure Proc_TimKiemTenSach
-as
-begin
-	select TenSach from Sach
-end
-go
 -- 2. Tạo Proc CRUD phiếu nhập
 -- 2.a Thêm phiếu nhập
 GO 
@@ -555,8 +513,8 @@ BEGIN
 	WHERE MaPhieuNhap = @MaPhieuNhap AND MaSach = @MaSach
 END
 go
--- 4. Proc cho CRUD bảng HoaDon
--- 4.a Xuất thông tin hóa đơn
+-- Proc cho CRUD bảng HoaDon
+-- Xuất thông tin hóa đơn
 create procedure Proc_HienHoaDon 
 as
 begin
@@ -564,7 +522,7 @@ begin
 end
 go
 
---4.b Hiện toàn bộ mã hóa đơn
+-- Hiện toàn bộ mã hóa đơn
 create procedure Proc_TimKiemMaHD
 as
 begin
@@ -572,7 +530,7 @@ begin
 end
 go
 
---4.c Tìm kiếm theo mã hóa đơn trong bảng hóa đơn
+-- Tìm kiếm theo mã hóa đơn trong bảng hóa đơn
 create procedure Proc_TimKiemTheoMaHD
 	@MaHD nchar(15)
 as
@@ -581,7 +539,7 @@ begin
 end
 go
 
---4.d Thêm mã hóa đơn
+-- Thêm mã hóa đơn
 create procedure Proc_ThemMaHoaDon 
 as
 begin
@@ -594,7 +552,7 @@ begin
 end
 go
 
---4.e Cập nhật hóa đơn
+-- Cập nhật hóa đơn
 create procedure Proc_CapNhatHoaDon
 	@MaHD nchar(15),
 	@NgayInHoaDon datetime
@@ -604,7 +562,7 @@ begin
 end
 go
 
---4.f Xóa hóa đơn
+-- Xóa hóa đơn
 create procedure Proc_XoaHoaDon
 	@MaHD nchar(15)
 as
@@ -613,8 +571,50 @@ begin
 	delete from HoaDon where MaHD = @MaHD
 end
 go
---5. Proc cho CRUD bảng ChiTietHoaDon
---5.a Hiển thị chi tiết hóa đơn
+
+-- Tìm kiếm toàn bộ Mã sách
+create procedure Proc_TimKiemMaSach
+as
+begin
+	select distinct MaSach from Sach order by MaSach 
+end
+go
+
+create procedure Proc_TimKiemTenSach
+as
+begin
+	select TenSach from Sach
+end
+go
+
+-- Hiển thị chi tiết sách
+create procedure Proc_HienChiTietSach
+as
+begin
+	select Sach.MaSach, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, Sach.SoLuongSach, Sach.Gia, Sach.TenSach, Sach.Anh
+	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach 
+	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
+	join TacGia on Sach.MaTG = TacGia.MaTG
+	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
+end
+go
+
+-- Hiển thị sách theo mã sách
+create procedure Proc_HienSachtheoMaSach
+	@MaSach nchar(10)
+as
+begin
+	select Sach.MaSach, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, Sach.SoLuongSach, Sach.Gia, Sach.TenSach
+	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach 
+	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
+	join TacGia on Sach.MaTG = TacGia.MaTG
+	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
+	where Sach.MaSach = @MaSach
+end
+go
+
+-- Proc cho CRUD bảng ChiTietHoaDon
+-- Hiển thị chi tiết hóa đơn
 create procedure Proc_HienCTHD
 as
 begin
@@ -626,7 +626,7 @@ begin
 end
 go
 
---5.b Hiện CTHD theo mã hóa đơn
+-- Hiện CTHD theo mã hóa đơn
 create procedure Proc_HienCTHDTheoMaHD @MaHD nchar(15)
 as
 begin
@@ -651,7 +651,8 @@ begin
 end
 go
 
---5.c Thêm sách cho chi tiết hóa đơn
+
+-- Thêm sách cho chi tiết hóa đơn
 create procedure Proc_ThemSachCTHD
 	@MaHD nchar(15), 
 	@MaSach nchar(10), 
@@ -669,7 +670,7 @@ begin
 end
 go
 
---5.d Xóa sách cho chi tiết hóa đơn
+-- Xóa sách cho chi tiết hóa đơn
 create procedure Proc_CapNhatSachCTHD
 	@MaHD nchar(15), 
 	@MaSach nchar(10), 
@@ -687,7 +688,7 @@ begin
 end
 go
 
---5.e Cập nhật sách cho chi tiết hóa đơn
+-- Cập nhật sách cho chi tiết hóa đơn
 create procedure Proc_XoaSachCTHD
 	@MaHD nchar(15),
 	@MaSach nchar(10)
@@ -695,183 +696,10 @@ as
 begin
 	delete from ChiTietHoaDon where MaHD = @MaHD and MaSach = @MaSach
 end
---4.2 CRUD bảng NXB
---trigger phat hien da co nha xuat ban nay
-go 
-CREATE TRIGGER trg_InsertNhaXuatBan
-ON NhaXuatBan
-FOR INSERT, UPDATE
-AS
-BEGIN
--- check MaKH
-	IF EXISTS (SELECT * FROM inserted WHERE TRIM(MaNXB) = ' ')
-	BEGIN
-		RAISERROR('Mã NXB không được để trống', 16, 1)
-		ROLLBACK 
-		RETURN
-	END
-	IF NOT EXISTS (SELECT * FROM NhaXuatBan WHERE MaNXB IN (SELECT MaNXB FROM inserted))
-	BEGIN
-		RAISERROR('Mã NXB đã tồn tại', 16, 1)
-		ROLLBACK 
-		RETURN
-	END
-	-- check ten NXB
-	IF EXISTS (SELECT * FROM inserted WHERE TRIM(TenNXB) = ' ')
-	BEGIN
-		RAISERROR('Tên NXB không được để trống', 16, 1)
-		ROLLBACK 
-		RETURN
-	END
-	-- check SDT
-	IF EXISTS (SELECT * FROM inserted WHERE TRIM(LienHe) = ' ')
-	BEGIN
-		RAISERROR('Liên hệ không được để trống', 16, 1)
-		ROLLBACK 
-		RETURN
-	END
-END
 go
--- proc thêm
-CREATE PROCEDURE ThemNhaXuatBan
-	@MaNXB nchar(10),
-	@TenNXB nvarchar(50),
-	@DiaChiNXB nvarchar(100),
-	@LienHe nvarchar(15)
-	
-AS
-BEGIN
-	
-	BEGIN TRANSACTION
-	BEGIN TRY
-		-- Kiểm tra xem đã tồn tại hay chưa
-		IF NOT EXISTS (SELECT * FROM NhaXuatBan WHERE MaNXB =@MaNXB)
-		BEGIN
-			-- Nếu chưa tồn tại, thêm mới nha xuat ban
-			INSERT INTO NhaXuatBan(MaNXB, TenNXB, DiaChiNXB,LienHe)
-			VALUES (@MaNXB, @TenNXB,@DiaChiNXB, @LienHe)
-		END
-		COMMIT TRAN
 
-	END TRY
-	BEGIN CATCH
-		ROLLBACK
-		DECLARE @err NVARCHAR(MAX)
-		SELECT @err = ERROR_MESSAGE()
-		RAISERROR(@err, 16, 1)
-	END CATCH
-END
+-----END----------------------------------------------------
 
--- proc sửa NhaXuatBan
-go
-CREATE PROCEDURE SuaNhaXuatBan
-	@MaNXB nchar(10),
-	@TenNXB nvarchar(50),
-	@DiaChiNXB nvarchar(100),
-	@LienHe nvarchar(15)
-	
-AS
-BEGIN
-	BEGIN TRY
-		UPDATE dbo.NhaXuatBan SET MaNXB = @MaNXB, TenNXB = @TenNXB, DiaChiNXB= @DiaChiNXB, LienHe = @LienHe
-		WHERE MaNXB = @MaNXB
-	END TRY
-	BEGIN CATCH
-		DECLARE @err NVARCHAR(MAX)
-		SELECT @err = ERROR_MESSAGE()
-		RAISERROR(@err, 16, 1)
-	END CATCH
-END
--- Tạo Proc CRUD tác giả
---a/ Thêm tác giả
-GO
-CREATE PROCEDURE ThemTacGia
-    @MaTG NCHAR(10),
-    @MaNXB NCHAR(10),
-    @TenTG NVARCHAR(50),
-    @LienHe NCHAR(15)
-AS
-BEGIN
-    INSERT INTO TacGia (MaTG, MaNXB, TenTG, LienHe)
-    VALUES (@MaTG, @MaNXB, @TenTG, @LienHe)
-END
-
-GO
---b/ Cập nhật thông tin tác giả
-CREATE PROCEDURE CapNhatTacGia
-    @MaTG NCHAR(10),
-    @MaNXB NCHAR(10),
-    @TenTG NVARCHAR(50),
-    @LienHe NCHAR(15)
-AS
-BEGIN
-    UPDATE TacGia
-    SET MaNXB = @MaNXB, TenTG = @TenTG, LienHe = @LienHe
-    WHERE MaTG = @MaTG
-END
-
-GO
---c/ Xóa tác giả
-CREATE PROCEDURE XoaTacGia
-    @MaTG NCHAR(10)
-AS
-BEGIN
-    DELETE FROM TacGia
-    WHERE MaTG = @MaTG
-END
-GO
--- Tạo Func tìm kiếm sách
---a/ Tìm kiếm sách theo tên
-CREATE FUNCTION TimKiemSachTheoTen
-    (@TenSach NVARCHAR(100))
-RETURNS TABLE
-AS
-RETURN
-    SELECT *
-    FROM Sach
-    WHERE TenSach LIKE '%' + @TenSach + '%'
-
-
-GO
---b/ Tìm kiếm sách theo tác giả
-CREATE FUNCTION TimKiemSachTheoTacGia
-    (@TenTacGia NVARCHAR(50))
-RETURNS TABLE
-AS
-RETURN
-    SELECT Sach.*
-    FROM Sach
-    INNER JOIN TacGia ON Sach.MaTG = TacGia.MaTG
-    WHERE TacGia.TenTG LIKE '%' + @TenTacGia + '%'
-
-
-GO
---c/ Tìm kiếm sách theo thể loại
-CREATE FUNCTION TimKiemSachTheoTheLoai
-    (@TenTheLoai NVARCHAR(50))
-RETURNS TABLE
-AS
-RETURN
-    SELECT *
-    FROM Sach
-    WHERE TheLoai LIKE '%' + @TenTheLoai + '%'
-
-
-GO
---d/ Tìm kiếm sách theo giá
-CREATE FUNCTION TimKiemSachTheoGia
-    (@GiaMin MONEY,
-     @GiaMax MONEY)
-RETURNS TABLE
-AS
-RETURN
-    SELECT *
-    FROM Sach
-    WHERE Gia BETWEEN @GiaMin AND @GiaMax
-
-
---4.1 func tính doanh thu theo ngày tháng năm
-go
 CREATE FUNCTION func_tinhDoanhThuNgay(@ngay INT, @thang INT, @nam INT)
 RETURNS FLOAT
 	AS
@@ -903,19 +731,8 @@ BEGIN
 	 RETURN @doanhThu;
 END;
 
-
--- PHẦN FUNCTION =================================================================================
--- 1. Function lấy bảng sách
-GO
-CREATE FUNCTION Func_LayBangSach()
-RETURNS TABLE
-AS 
-	RETURN (SELECT * FROM Sach)
-
-
--- 2. Function lấy bảng phiếu nhập
-GO
-CREATE FUNCTION Func_LayBangPhieuNhap()
-RETURNS TABLE
-AS 
-	RETURN (SELECT * FROM PhieuNhap)
+drop function func_tinhDoanhThuNam
+select * from HoaDon
+select dbo.func_tinhDoanhThuNgay(2,9,2023)
+select dbo.func_tinhDoanhThuThang(9,2023)
+select dbo.func_tinhDoanhThuNam(2023)

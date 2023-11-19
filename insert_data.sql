@@ -1,5 +1,5 @@
 -- PHẦN INSERT DATA:==========================================================================
-
+use QLNhaSach
 -- Insert Data into NhaXuatBan:
 insert into NhaXuatBan(MaNXB,TenNXB,DiaChiNXB,LienHe) values ('NXB_KD',N'NXB Kim Đồng',N'248 Cống Quỳnh, P. Phạm Ngũ Lão, Q.1 TP. Hồ Chí Minh','info@nxbkimdong.com.vn')											
 insert into NhaXuatBan(MaNXB,TenNXB,DiaChiNXB,LienHe) values ('NXB_T',N'NXB Trẻ',N'161B Lý Chính Thắng, phường Võ Thị Sáu, Quận 3, TP. Hồ Chí Minh','hopthubandoc@nxbtre.com.vn ')											
