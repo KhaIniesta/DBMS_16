@@ -1,3 +1,5 @@
+use QLNhaSach
+go
 -- Tạo Func tìm kiếm sách
 --a/ Tìm kiếm sách theo tên
 CREATE FUNCTION TimKiemSachTheoTen
@@ -8,8 +10,6 @@ RETURN
     SELECT *
     FROM Sach
     WHERE TenSach LIKE '%' + @TenSach + '%'
-
-
 GO
 --b/ Tìm kiếm sách theo tác giả
 CREATE FUNCTION TimKiemSachTheoTacGia
@@ -21,8 +21,6 @@ RETURN
     FROM Sach
     INNER JOIN TacGia ON Sach.MaTG = TacGia.MaTG
     WHERE TacGia.TenTG LIKE '%' + @TenTacGia + '%'
-
-
 GO
 --c/ Tìm kiếm sách theo thể loại
 CREATE FUNCTION TimKiemSachTheoTheLoai
@@ -33,8 +31,6 @@ RETURN
     SELECT *
     FROM Sach
     WHERE TheLoai LIKE '%' + @TenTheLoai + '%'
-
-
 GO
 --d/ Tìm kiếm sách theo giá
 CREATE FUNCTION TimKiemSachTheoGia
