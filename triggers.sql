@@ -190,7 +190,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Xóa các bản ghi trong Sach khi TacGia được xóa hoặc cập nhật
+    -- Xóa các bản ghi trong Sach khi TacGia được xóa
     IF EXISTS (SELECT * FROM deleted INNER JOIN Sach ON deleted.MaTG = Sach.MaTG)
     BEGIN
         DELETE FROM Sach
