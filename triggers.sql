@@ -171,6 +171,7 @@ END
 
 --6. Trigger bảng
 -- Trigger bắt lỗi nhập thiếu thông tin khi thêm, sửa, xoá cho bảng TacGia
+GO
 CREATE TRIGGER TG_Trigger_TacGia_InsUpdDel
 ON TacGia
 AFTER INSERT, UPDATE, DELETE
@@ -185,7 +186,7 @@ BEGIN
     END
 END
 
-
+GO
 CREATE TRIGGER TG_Trigger_TacGia_Change
 ON TacGia
 AFTER DELETE, UPDATE
