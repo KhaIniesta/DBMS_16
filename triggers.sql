@@ -169,6 +169,57 @@ BEGIN
 	END
 END
 
+--6. Trigger bảng
+-- Trigger bắt lỗi nhập thiếu thông tin khi thêm, sửa, xoá cho bảng TacGia
+CREATE TRIGGER TG_Trigger_TacGia_InsUpdDel
+ON TacGia
+AFTER INSERT, UPDATE, DELETE
+AS
+BEGIN
+    -- Kiểm tra lỗi nhập thiếu thông tin khi thêm hoặc sửa
+    IF EXISTS (SELECT * FROM inserted WHERE TRIM(TenTG) = '' OR TRIM(LienHe) = '')
+    BEGIN
+        RAISERROR('Thông tin không đủ khi thêm, sửa, xóa đối tác giả.', 16, 1)
+        ROLLBACK
+        RETURN
+    END
+END
+
+
+CREATE TRIGGER TG_Trigger_TacGia_Change
+ON TacGia
+AFTER DELETE, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Xóa các bản ghi trong Sach khi TacGia được xóa
+    IF EXISTS (SELECT * FROM deleted INNER JOIN Sach ON deleted.MaTG = Sach.MaTG)
+    BEGIN
+        DELETE FROM Sach
+        WHERE MaTG IN (SELECT MaTG FROM deleted);
+    END;
+
+    -- Thêm các bản ghi vào Sach khi TacGia được thêm
+    IF EXISTS (SELECT * FROM inserted INNER JOIN Sach ON inserted.MaTG = Sach.MaTG)
+    BEGIN
+        INSERT INTO Sach (MaSach, MaTG, MaNXB, TenSach, SoLuongSach, Gia, TheLoai, Anh)
+        SELECT NEWID(), inserted.MaTG, inserted.MaNXB, inserted.TenTG, 0, 0, '', NULL
+        FROM inserted
+        LEFT JOIN Sach ON inserted.MaTG = Sach.MaTG
+        WHERE Sach.MaTG IS NULL;
+    END;
+
+    -- Cập nhật các bản ghi trong Sach khi TacGia được cập nhật
+    IF EXISTS (SELECT * FROM inserted INNER JOIN Sach ON inserted.MaTG = Sach.MaTG)
+    BEGIN
+        UPDATE Sach
+        SET MaTG = inserted.MaTG
+        FROM Sach
+        INNER JOIN inserted ON Sach.MaTG = inserted.MaTG;
+    END;
+END;
+
 -- Nếu phiếu nhập có xuất hiện bên chi tiết phiếu nhập thì không cho xóa
 IF OBJECT_ID ('TG_PhieuNhap_Delete', 'TR') IS NOT NULL 
   DROP TRIGGER TG_PhieuNhap_Delete; 
@@ -195,3 +246,4 @@ BEGIN
         DELETE FROM PhieuNhap WHERE MaPhieuNhap = @DeletedMaPhieuNhap;
     END
 END;
+
