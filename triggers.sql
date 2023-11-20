@@ -248,3 +248,81 @@ BEGIN
     END
 END;
 
+go
+-- Nếu Nhà xuất bản có xuất hiện bên sách thì xóa sách và tác giả trước
+CREATE TRIGGER trg_XoaNhaXuatBan
+ON NhaXuatBan
+INSTEAD OF DELETE
+AS
+BEGIN
+DECLARE @DeletedMaNXB NCHAR(10);
+
+    -- Lấy các MaPhieuNhap bị xóa
+    SELECT @DeletedMaNXB = MaNXB
+    FROM DELETED;
+
+    -- Kiểm tra xem có MaNXB nào được tham chiếu từ NXB không
+    IF EXISTS (SELECT 1 FROM Sach WHERE MaNXB = @DeletedMaNXB)
+	BEGIN
+    SET NOCOUNT ON;
+
+    -- Xóa sách liên quan
+    DELETE FROM Sach
+    WHERE MaNXB IN (SELECT MaNXB FROM DELETED);
+	END;
+
+	-- Kiểm tra xem có MaNXB nào được tham chiếu từ NXB không
+	IF EXISTS (SELECT 1 FROM TacGia WHERE MaNXB = @DeletedMaNXB)
+	BEGIN 
+	SET NOCOUNT ON;
+	--Xoa tagia lien quan
+	DELETE FROM TacGia
+    WHERE MaNXB IN (SELECT MaNXB FROM DELETED);
+	END;
+
+	-- xoa NXB
+	DELETE FROM NhaXuatBan 
+	WHERE MaNXB In (SELECT MaNXB FROM DELETED);
+END;
+
+-- Trigger xoa sach
+go
+CREATE TRIGGER trg_XoaSach
+ON Sach
+INSTEAD OF DELETE
+AS
+
+BEGIN
+DECLARE @DeletedMaSach NCHAR(10);
+
+    -- Lấy các MaSach bị xóa
+    SELECT @DeletedMaSach = MaSach
+    FROM DELETED;
+
+    -- Kiểm tra xem có MaSach nào được tham chiếu từ ChiTietPhieuNhap không
+    IF EXISTS (SELECT 1 FROM ChiTietPhieuNhap WHERE MaSach = @DeletedMaSach)
+	BEGIN
+    SET NOCOUNT ON;
+
+    -- Xóa chitietphieunhap liên quan
+    DELETE FROM ChiTietPhieuNhap
+    WHERE MaSach IN (SELECT MaSach FROM DELETED);
+	END;
+
+	-- Kiểm tra xem có MaSach nào được tham chiếu từ ChiTietHoaDon không
+	IF EXISTS (SELECT 1 FROM ChiTietHoaDon WHERE MaSach = @DeletedMaSach)
+	BEGIN 
+	SET NOCOUNT ON;
+
+	-- xoa chitiethoadon lien quan
+	DELETE FROM ChiTietHoaDon
+    WHERE MaSach IN (SELECT MaSach FROM DELETED);
+	END;
+
+	--XoaSach
+	DELETE FROM Sach
+    WHERE MaSach IN (SELECT MaSach FROM DELETED);
+	
+END;
+
+
