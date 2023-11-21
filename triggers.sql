@@ -133,7 +133,7 @@ end;
 go
 
 --4.2 CRUD bảng NXB
---trigger phat hien da co nha xuat ban nay
+--trigger phát hiện để trống các not null
 go 
 CREATE TRIGGER trg_InsertNhaXuatBan
 ON NhaXuatBan
@@ -144,12 +144,6 @@ BEGIN
 	IF EXISTS (SELECT * FROM inserted WHERE TRIM(MaNXB) = ' ')
 	BEGIN
 		RAISERROR('Mã NXB không được để trống', 16, 1)
-		ROLLBACK 
-		RETURN
-	END
-	IF NOT EXISTS (SELECT * FROM NhaXuatBan WHERE MaNXB IN (SELECT MaNXB FROM inserted))
-	BEGIN
-		RAISERROR('Mã NXB đã tồn tại', 16, 1)
 		ROLLBACK 
 		RETURN
 	END
