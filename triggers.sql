@@ -222,7 +222,7 @@ BEGIN
     -- Kiểm tra xem có MaPhieuNhap nào được tham chiếu từ ChiTietPhieuNhap không
     IF EXISTS (SELECT 1 FROM ChiTietPhieuNhap WHERE MaPhieuNhap = @DeletedMaPhieuNhap)
     BEGIN
-        RAISERROR ('Phiếu nhập đã xuất hiện bên chi tiết phiếu nhập, không thể xóa!', 16, 1);
+        RAISERROR ('Phiếu nhập đã xuất hiện bên chi tiết phiếu nhập, chọn Yes sẽ xóa phiếu nhập hiện tại và chi tiết phiếu nhập!', 16, 1);
     END
     ELSE
     BEGIN
