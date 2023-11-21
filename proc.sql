@@ -360,7 +360,15 @@ BEGIN
 		RAISERROR(@err, 16, 1)
 	END CATCH
 END
-
+GO
+CREATE PROCEDURE XoaNhaXuatBan
+    @MaNXB NCHAR(10)
+AS
+BEGIN
+    DELETE FROM NhaXuatBan
+    WHERE MaNXB = @MaNXB
+END
+GO
 -- 7. Tạo Proc CRUD tác giả
 --a/ Thêm tác giả
 GO
