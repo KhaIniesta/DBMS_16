@@ -411,3 +411,12 @@ begin
 	where hd.MaHD = @MaHD
 end
 go
+
+GO
+CREATE PROCEDURE Proc_XoaChiTietPhieuNhapTheoMaPhieuNhap
+	@MaPhieuNhap NCHAR(10)
+AS
+BEGIN
+	DELETE ChiTietPhieuNhap 
+	WHERE MaPhieuNhap = @MaPhieuNhap 
+END
