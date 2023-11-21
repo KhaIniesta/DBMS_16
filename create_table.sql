@@ -9,14 +9,14 @@ CREATE TABLE NhaXuatBan (
     DiaChiNXB NVARCHAR(100),
     LienHe NCHAR(50) NOT NULL
 )
-
+go
 CREATE TABLE TacGia(
     MaTG NCHAR(10) PRIMARY KEY, 
     MaNXB NCHAR(10) REFERENCES NhaXuatBan(MaNXB) ON DELETE SET NULL, 
     TenTG NVARCHAR(50) NOT NULL, 
     LienHe NCHAR(15)
 )
-
+go
 CREATE TABLE Sach(
     MaSach NCHAR(10) PRIMARY KEY, 
     MaTG NCHAR(10) REFERENCES TacGia(MaTG) ON DELETE SET NULL, 
@@ -27,29 +27,29 @@ CREATE TABLE Sach(
     TheLoai NVARCHAR(50) NOT NULL,
     Anh IMAGE
 )
-
+go
 CREATE TABLE PhieuNhap(
     MaPhieuNhap NCHAR(10) PRIMARY KEY, 
     MaNXB NCHAR(10) REFERENCES NhaXuatBan(MaNXB) ON DELETE SET NULL, 
     NgayNhap DATETIME NOT NULL 
 )
-
+go
 CREATE TABLE ChiTietPhieuNhap(
     MaPhieuNhap NCHAR(10) REFERENCES PhieuNhap(MaPhieuNhap), 
     MaSach NCHAR(10) REFERENCES Sach(MaSach), 
     SoLuongNhap INT NOT NULL CHECK (SoLuongNhap > 0),
     PRIMARY KEY (MaPhieuNhap, MaSach)
 )
-
+go
 CREATE TABLE HoaDon(
     MaHD NCHAR(15) PRIMARY KEY, 
     TongHD MONEY CHECK( TongHD >= 0) DEFAULT 0, 
     NgayInHD DATETIME NOT NULL
 )
-
+go
 CREATE TABLE ChiTietHoaDon(
     MaHD NCHAR(15) REFERENCES HoaDon(MaHD), 
-    MaSach NCHAR(10) REFERENCES Sach(MaSach), 
+    MaSach NCHAR(10) REFERENCES Sach(MaSach) ON UPDATE CASCADE, 
     SoLuongBan INT CHECK (SoLuongBan > 0), 
     Gia MONEY NOT NULL DEFAULT 0 CHECK(Gia >= 0),
     PRIMARY KEY (MaHD, MaSach)
