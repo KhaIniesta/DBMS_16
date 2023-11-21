@@ -248,3 +248,33 @@ BEGIN
     END
 END;
 
+-- Nếu Sách có xuất hiện bên chi tiết phiếu nhập hoặc có xuất hiện bên CTHD thì không cho xóa
+IF OBJECT_ID ('TG_Sach_Delete', 'TR') IS NOT NULL 
+  DROP TRIGGER TG_Sach_Delete; 
+GO
+CREATE TRIGGER TG_Sach_Delete
+ON Sach
+INSTEAD OF DELETE
+AS
+BEGIN
+    DECLARE @DeletedMaSach NCHAR(10);
+
+    -- Lấy các MaSach bị xóa
+    SELECT @DeletedMaSach = MaSach
+    FROM DELETED;
+
+    -- Kiểm tra xem có MaSach nào được tham chiếu từ ChiTietPhieuNhap không
+    IF EXISTS (SELECT 1 FROM ChiTietPhieuNhap WHERE MaSach = @DeletedMaSach)
+    BEGIN
+        RAISERROR ('Sách đã xuất hiện bên chi tiết phiếu nhập, không thể xóa!', 16, 1);
+    END
+    ELSE IF EXISTS (SELECT 1 FROM ChiTietHoaDon WHERE MaSach = @DeletedMaSach)
+    BEGIN
+        RAISERROR ('Sách đã xuất hiện bên chi tiết hóa đơn, không thể xóa!', 16, 1);
+    END
+    ELSE
+    BEGIN
+        -- Xóa bản ghi từ bảng Sách
+        DELETE FROM Sach WHERE MaSach = @DeletedMaSach;
+    END
+END;
