@@ -203,6 +203,7 @@ BEGIN
     END;
 END;
 
+GO
 -- Nếu phiếu nhập có xuất hiện bên chi tiết phiếu nhập thì không cho xóa
 IF OBJECT_ID ('TG_PhieuNhap_Delete', 'TR') IS NOT NULL 
   DROP TRIGGER TG_PhieuNhap_Delete; 
@@ -230,6 +231,7 @@ BEGIN
     END
 END;
 
+GO
 -- Nếu Sách có xuất hiện bên chi tiết phiếu nhập hoặc có xuất hiện bên CTHD thì không cho xóa
 IF OBJECT_ID ('TG_Sach_Delete', 'TR') IS NOT NULL 
   DROP TRIGGER TG_Sach_Delete; 
