@@ -731,8 +731,3 @@ BEGIN
 	 RETURN @doanhThu;
 END;
 
-drop function func_tinhDoanhThuNam
-select * from HoaDon
-select dbo.func_tinhDoanhThuNgay(2,9,2023)
-select dbo.func_tinhDoanhThuThang(9,2023)
-select dbo.func_tinhDoanhThuNam(2023)
