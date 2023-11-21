@@ -22,17 +22,17 @@ GO
 -- 4.a View xuat tong doanh thu theo ngay
 
 create view V_DTNgay as
-select MaHD, Year(NgayInHD) Nam, Month(NgayInHD) Thang, Day(NgayInHD) Ngay from HoaDon
+select MaHD, Year(NgayInHD) Nam, Month(NgayInHD) Thang, Day(NgayInHD) Ngay, TongHD from HoaDon
 go
 
 -- 4.b View xuat tong doanh thu theo thang
 create view V_DTThang as
-select MaHD, Year(NgayInHD) Nam, Month(NgayInHD) Thang, Day(NgayInHD) Ngay from HoaDon
+select MaHD, Year(NgayInHD) Nam, Month(NgayInHD) Thang, Day(NgayInHD) Ngay, TongHD from HoaDon
 go
 
 -- 4.c View xuat tong doanh thu theo nam
 create view V_DTNam as
-select MaHD, Year(NgayInHD) Nam, Month(NgayInHD) Thang from HoaDon
+select MaHD, Year(NgayInHD) Nam, Month(NgayInHD) Thang, TongHD from HoaDon
 go
 
 -- 5. View xem so luong sach da ban trong ngay 
