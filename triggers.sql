@@ -119,7 +119,7 @@ after update as
 begin
 	update HoaDon
 	set TongHD = TongHD + (select sum(Gia) from inserted where MaHD = HoaDon.MaHD) - (select sum(Gia) from deleted where MaHD = HoaDon.MaHD)
-	from HoaDon join delete on HoaDon.MaHD = delete.MaHD
+	from HoaDon join deleted on HoaDon.MaHD = deleted.MaHD
 end;
 go
 -- 5.b Cập nhật lại tổng hóa đơn sau khi xóa sp ra khỏi chi tiết hóa đơn
