@@ -189,28 +189,10 @@ END
 GO
 CREATE TRIGGER TG_Trigger_TacGia_Change
 ON TacGia
-AFTER DELETE, UPDATE
+AFTER UPDATE
 AS
 BEGIN
     SET NOCOUNT ON;
-
-    -- Xóa các bản ghi trong Sach khi TacGia được xóa
-    IF EXISTS (SELECT * FROM deleted INNER JOIN Sach ON deleted.MaTG = Sach.MaTG)
-    BEGIN
-        DELETE FROM Sach
-        WHERE MaTG IN (SELECT MaTG FROM deleted);
-    END;
-
-    -- Thêm các bản ghi vào Sach khi TacGia được thêm
-    IF EXISTS (SELECT * FROM inserted INNER JOIN Sach ON inserted.MaTG = Sach.MaTG)
-    BEGIN
-        INSERT INTO Sach (MaSach, MaTG, MaNXB, TenSach, SoLuongSach, Gia, TheLoai, Anh)
-        SELECT NEWID(), inserted.MaTG, inserted.MaNXB, inserted.TenTG, 0, 0, '', NULL
-        FROM inserted
-        LEFT JOIN Sach ON inserted.MaTG = Sach.MaTG
-        WHERE Sach.MaTG IS NULL;
-    END;
-
     -- Cập nhật các bản ghi trong Sach khi TacGia được cập nhật
     IF EXISTS (SELECT * FROM inserted INNER JOIN Sach ON inserted.MaTG = Sach.MaTG)
     BEGIN
