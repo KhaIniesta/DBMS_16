@@ -269,8 +269,11 @@ BEGIN
 			INSERT INTO NhaXuatBan(MaNXB, TenNXB, DiaChiNXB,LienHe)
 			VALUES (@MaNXB, @TenNXB,@DiaChiNXB, @LienHe)
 		END
+		ELSE 
+		BEGIN
+			RAISERROR('Mã nhà xuất bản này đã tồn tại', 16, 1)
+		END
 		COMMIT TRAN
-
 	END TRY
 	BEGIN CATCH
 		ROLLBACK
