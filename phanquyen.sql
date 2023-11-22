@@ -193,9 +193,9 @@ EXEC Proc_ThemTaiKhoan
 EXEC Proc_ThemTaiKhoan
 	@TenDangNhap = 'thungan',
 	@MatKhau  = '456',
-	@Cap = 3
+	@Cap = 2
 
 EXEC Proc_ThemTaiKhoan
 	@TenDangNhap = 'qlkho',
 	@MatKhau  = '789',
-	@Cap = 2
+	@Cap = 3
