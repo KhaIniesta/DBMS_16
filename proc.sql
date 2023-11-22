@@ -248,6 +248,23 @@ begin
 	delete from ChiTietHoaDon where MaHD = @MaHD and MaSach = @MaSach
 end
 
+-- Tìm kiếm mã hóa đơn
+create procedure Proc_TimKiemMaHD
+as
+begin
+    select distinct MaHD, TongHD from HoaDon order by MaHD
+end
+go
+
+-- Tìm kiếm mã tên sách
+create procedure Proc_TimKiemTenSach
+as
+begin
+    select distinct MaSach, TenSach from Sach order by TenSach
+end
+go
+
+
 -- 6. Nhà xuất bản:
 -- Thêm nhà xuất bản
 Go
