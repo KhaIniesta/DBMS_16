@@ -48,6 +48,7 @@ GRANT SELECT,INSERT,UPDATE, DELETE ON PhieuNhap TO QuanLiKho
 GRANT SELECT,INSERT,UPDATE, DELETE ON ChiTietPhieuNhap TO QuanLiKho
 go
 --. Gán quyền thực thi trên các procedure, function, views cho role QuanLiKho
+GRANT SELECT ON NhaXuatBan TO QuanLiKho
 GRANT SELECT ON Func_LayBangSach TO QuanLiKho
 GRANT EXECUTE ON Proc_XoaSach TO QuanLiKho
 GRANT EXECUTE ON Proc_ThemSach TO QuanLiKho
