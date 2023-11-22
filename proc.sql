@@ -248,6 +248,7 @@ begin
 	delete from ChiTietHoaDon where MaHD = @MaHD and MaSach = @MaSach
 end
 
+go
 -- Tìm kiếm mã hóa đơn
 create procedure Proc_TimKiemMaHD
 as
