@@ -262,3 +262,25 @@ BEGIN
         DELETE FROM Sach WHERE MaSach = @DeletedMaSach;
     END
 END;
+go
+
+-- Trigger check trùng mã sách khi nhập vào chi tiết hóa đơn
+create trigger TG_CheckMaSachTrungCTHD
+on ChiTietHoaDon
+instead of insert
+as
+begin
+	declare @mahd nchar(15) set @mahd = (select MaHD from inserted) 
+	declare @masach nchar(10) set @masach = (select MaSach from inserted)
+	declare @soluong int set @soluong = (select SoLuongBan from inserted) 
+
+	if exists (select MaSach from chitiethoadon cthd where MaSach = @masach and MaHD = @mahd)
+	begin
+		raiserror ('Sách đã có trong chi tiết hóa đơn, vui lòng chọn lại!', 16, 1)
+		rollback
+	end
+	else
+	begin 
+		insert into ChiTietHoaDon(MaHD, MaSach, SoLuongBan) values (@mahd, @masach, @soluong)
+	end
+end
