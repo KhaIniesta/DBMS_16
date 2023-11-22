@@ -13,12 +13,6 @@ BEGIN
 		ROLLBACK 
 		RETURN
 	END
-	IF NOT EXISTS (SELECT * FROM NhaXuatBan WHERE MaNXB IN (SELECT MaNXB FROM inserted))
-	BEGIN
-		RAISERROR('Mã NXB đã tồn tại', 16, 1)
-		ROLLBACK 
-		RETURN
-	END
 	-- check ten NXB
 	IF EXISTS (SELECT * FROM inserted WHERE TRIM(TenNXB) = ' ')
 	BEGIN
@@ -321,7 +315,7 @@ begin
 end;
 go
 
--- Trigger check trùng mã sách khi nhập vào chi tiết hóa đơn
+--16. Trigger check trùng mã sách khi nhập vào chi tiết hóa đơn
 create trigger TG_CheckMaSachTrungCTHD
 on ChiTietHoaDon
 instead of insert
@@ -341,3 +335,26 @@ begin
 		insert into ChiTietHoaDon(MaHD, MaSach, SoLuongBan) values (@mahd, @masach, @soluong)
 	end
 end
+
+--16. Trigger kiểm tra MaTG có tồn tại trước đó hay không
+CREATE TRIGGER TG_KiemTraMaTacGia
+ON TacGia
+INSTEAD OF INSERT
+AS
+BEGIN
+		-- Kiểm tra xem MaTG đã tồn tại hay chưa
+    IF NOT EXISTS (SELECT * FROM TacGia TG WHERE TG.MaTG IN (SELECT MaTG FROM inserted))
+    BEGIN
+        -- Thêm dữ liệu vào bảng TacGia nếu MaTG không tồn tại
+        INSERT INTO TacGia (MaTG, MaNXB, TenTG, LienHe)
+        SELECT MaTG, MaNXB, TenTG, LienHe
+        FROM inserted;
+    END
+    ELSE
+    BEGIN
+        
+        RAISERROR('MaTG đã tồn tại!', 16, 1);
+    END
+END;
+go
+
