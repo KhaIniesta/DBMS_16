@@ -13,6 +13,7 @@ GRANT SELECT,INSERT,UPDATE, DELETE ON ChiTietHoaDon TO admin_nhasach
 GO
 --. Gán toàn bộ quyền thực thi trên các procedure, function cho role admin_nhasach
 GRANT EXECUTE to admin_nhasach
+GRANT SELECT TO admin_nhasach
 GO
 
 -- 2. Tạo role cho NhanVienThuNgan: thêm, sửa, xóa Hóa đơn, CT hóa đơn--------------------------------
@@ -22,17 +23,20 @@ GRANT SELECT,INSERT,UPDATE, DELETE ON HoaDon TO NhanVienThuNgan
 GRANT SELECT,INSERT,UPDATE, DELETE ON ChiTietHoaDon TO NhanVienThuNgan
 GO
 --. Gán quyền thực thi trên các procedure, function cho role NhanVienThuNgan
-GRANT EXECUTE ON Proc_ThemSachCTHD to NhanVienThuNgan;
-GRANT EXECUTE ON Proc_CapNhatSachCTHD to NhanVienThuNgan;
-GRANT EXECUTE ON Proc_XoaSachCTHD to NhanVienThuNgan;
-GRANT EXECUTE ON Proc_TimKiemTheoMaHD  to NhanVienThuNgan;
-GRANT EXECUTE ON Proc_CapNhatHoaDon to NhanVienThuNgan;
-GRANT EXECUTE ON Proc_XoaHoaDon to NhanVienThuNgan;
-GRANT EXECUTE ON Proc_HienCTHDTheoMaHD to NhanVienThuNgan;
-GRANT EXECUTE ON Proc_HienCTHDTheoTenSach to NhanVienThuNgan;
-GRANT EXECUTE ON Proc_XuatHoaDon to NhanVienThuNgan;
-GRANT EXECUTE ON Proc_ThemMaHoaDon to NhanVienThuNgan;
-GRANT SELECT ON V_HienChiTietSach TO NhanVienThuNgan;
+GRANT EXECUTE ON Proc_ThemMaHoaDon TO NhanVienThuNgan
+GRANT SELECT ON V_HienChiTietSach TO NhanVienThuNgan
+GRANT EXECUTE ON Proc_HienCTHDTheoMaHD TO NhanVienThuNgan
+GRANT EXECUTE ON Proc_TimKiemTheoMaHD TO NhanVienThuNgan
+GRANT EXECUTE ON Proc_TimKiemMaHD TO NhanVienThuNgan
+GRANT EXECUTE ON Proc_TimKiemTenSach TO NhanVienThuNgan
+GRANT EXECUTE ON Proc_ThemSachCTHD TO NhanVienThuNgan
+GRANT EXECUTE ON Proc_CapNhatSachCTHD TO NhanVienThuNgan
+GRANT EXECUTE ON Proc_XoaSachCTHD TO NhanVienThuNgan
+GRANT EXECUTE ON Proc_XoaHoaDon TO NhanVienThuNgan
+GRANT EXECUTE ON Proc_HienCTHDTheoTenSach TO NhanVienThuNgan
+GRANT EXECUTE ON Proc_CapNhatHoaDon TO NhanVienThuNgan
+GRANT EXECUTE ON Proc_XuatHoaDon TO NhanVienThuNgan
+
 GO
 
 -- 3. Tạo role cho QuanLiKho: thêm, sửa, xóa Tác giả, Sách, Phiếu nhập, CT Phiếu nhập --------------------------------
@@ -43,23 +47,24 @@ GRANT SELECT,INSERT,UPDATE, DELETE ON Sach TO QuanLiKho
 GRANT SELECT,INSERT,UPDATE, DELETE ON PhieuNhap TO QuanLiKho
 GRANT SELECT,INSERT,UPDATE, DELETE ON ChiTietPhieuNhap TO QuanLiKho
 go
---. Gán quyền thực thi trên các procedure, function cho role QuanLiKho
-GRANT EXECUTE ON Proc_XoaSach to QuanLiKho;
-GRANT EXECUTE ON Proc_ThemSach to QuanLiKho;
-GRANT EXECUTE ON Proc_SuaSach to QuanLiKho;
-
-GRANT EXECUTE ON Proc_XoaPhieuNhap to QuanLiKho;
-GRANT EXECUTE ON Proc_ThemPhieuNhap to QuanLiKho;
-GRANT EXECUTE ON Proc_SuaPhieuNhap to QuanLiKho;
-
-GRANT EXECUTE ON Proc_XoaChiTietPhieuNhap to QuanLiKho;
-GRANT EXECUTE ON Proc_ThemChiTietPhieuNhap to QuanLiKho;
-GRANT EXECUTE ON Proc_SuaChiTietPhieuNhap to QuanLiKho;
-
-GRANT EXECUTE ON ThemTacGia to QuanLiKho;
-GRANT EXECUTE ON CapNhatTacGia to QuanLiKho;
-GRANT EXECUTE ON XoaTacGia to QuanLiKho;
-GRANT EXECUTE ON Proc_XoaChiTietPhieuNhapTheoMaPhieuNhap to QuanLiKho;
+--. Gán quyền thực thi trên các procedure, function, views cho role QuanLiKho
+GRANT SELECT ON Func_LayBangSach TO QuanLiKho
+GRANT EXECUTE ON Proc_XoaSach TO QuanLiKho
+GRANT EXECUTE ON Proc_ThemSach TO QuanLiKho
+GRANT EXECUTE ON Proc_SuaSach TO QuanLiKho
+GRANT EXECUTE ON ThemTacGia TO QuanLiKho
+GRANT EXECUTE ON CapNhatTacGia TO QuanLiKho
+GRANT EXECUTE ON XoaTacGia TO QuanLiKho
+GRANT SELECT ON TimKiemSachTheoTacGia TO QuanLiKho
+GRANT SELECT ON Func_LayBangPhieuNhap TO QuanLiKho
+GRANT EXECUTE ON Proc_XoaPhieuNhap TO QuanLiKho
+GRANT EXECUTE ON Proc_XoaChiTietPhieuNhapTheoMaPhieuNhap TO QuanLiKho
+GRANT EXECUTE ON Proc_ThemPhieuNhap TO QuanLiKho
+GRANT EXECUTE ON Proc_SuaPhieuNhap TO QuanLiKho
+GRANT SELECT ON V_ChiTietCacPhieuNhap TO QuanLiKho
+GRANT EXECUTE ON Proc_XoaChiTietPhieuNhap TO QuanLiKho
+GRANT EXECUTE ON Proc_ThemChiTietPhieuNhap  TO QuanLiKho
+GRANT EXECUTE ON Proc_SuaChiTietPhieuNhap TO QuanLiKho
 GO
 
 
@@ -196,6 +201,6 @@ end
 GO
 
 EXEC Proc_ThemTaiKhoan
-	@TenDangNhap = 'admin',
+	@TenDangNhap = 'admin_sach',
 	@MatKhau  = '123',
 	@Cap = 1
