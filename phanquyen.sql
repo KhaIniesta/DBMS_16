@@ -1,3 +1,5 @@
+USE QLNhaSach
+GO
 --================ PHÂN QUYỀN ================
 -- THIẾT LẬP CÁC ROLE:
 -- 2. Tạo role cho NhanVienThuNgan: thêm, sửa, xóa Hóa đơn, CT hóa đơn--------------------------------
