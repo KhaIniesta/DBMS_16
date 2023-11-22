@@ -1,8 +1,8 @@
 -- PHẦN TẠO CÁC TRIGGER:==========================================================================
 use QLNhaSach
 go 
---1. trigger phat hien da co nha xuat ban nay
-CREATE TRIGGER trg_InsertNhaXuatBan ON NhaXuatBan
+--1. trigger phat hien chua dien du thong tin Nha xuat ban
+CREATE TRIGGER TG_InsertNhaXuatBan ON NhaXuatBan
 FOR INSERT, UPDATE
 AS
 BEGIN
@@ -33,13 +33,13 @@ GO
 -- 2. Trigger bắt lỗi nhập thiếu thông tin khi thêm, sửa, xoá cho bảng TacGia
 CREATE TRIGGER TG_Trigger_TacGia_InsUpdDel
 ON TacGia
-AFTER INSERT, UPDATE, DELETE
+AFTER INSERT, UPDATE
 AS
 BEGIN
     -- Kiểm tra lỗi nhập thiếu thông tin khi thêm hoặc sửa
     IF EXISTS (SELECT * FROM inserted WHERE TRIM(TenTG) = '' OR TRIM(LienHe) = '')
     BEGIN
-        RAISERROR('Thông tin không đủ khi thêm, sửa, xóa đối tác giả.', 16, 1)
+        RAISERROR('Thông tin không đủ khi thêm, sửa', 16, 1)
         ROLLBACK
         RETURN
     END

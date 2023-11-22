@@ -248,6 +248,7 @@ begin
 	delete from ChiTietHoaDon where MaHD = @MaHD and MaSach = @MaSach
 end
 
+go
 -- Tìm kiếm mã hóa đơn
 create procedure Proc_TimKiemMaHD
 as
@@ -268,7 +269,7 @@ go
 -- 6. Nhà xuất bản:
 -- Thêm nhà xuất bản
 Go
-CREATE PROCEDURE ThemNhaXuatBan
+CREATE PROCEDURE Proc_ThemNhaXuatBan
 	@MaNXB nchar(10),
 	@TenNXB nvarchar(50),
 	@DiaChiNXB nvarchar(100),
@@ -302,7 +303,7 @@ END
 
 -- proc sửa NhaXuatBan
 go
-CREATE PROCEDURE SuaNhaXuatBan
+CREATE PROCEDURE Proc_SuaNhaXuatBan
 	@MaNXB nchar(10),
 	@TenNXB nvarchar(50),
 	@DiaChiNXB nvarchar(100),
@@ -324,7 +325,7 @@ END
 GO
 
 
-CREATE PROCEDURE XoaNhaXuatBan
+CREATE PROCEDURE Proc_XoaNhaXuatBan
     @MaNXB NCHAR(10)
 AS
 BEGIN

@@ -49,7 +49,7 @@ CREATE TABLE HoaDon(
 go
 CREATE TABLE ChiTietHoaDon(
     MaHD NCHAR(15) REFERENCES HoaDon(MaHD), 
-    MaSach NCHAR(10) REFERENCES Sach(MaSach) ON UPDATE CASCADE, 
+    MaSach NCHAR(10) REFERENCES Sach(MaSach), 
     SoLuongBan INT CHECK (SoLuongBan > 0), 
     Gia MONEY NOT NULL DEFAULT 0 CHECK(Gia >= 0),
     PRIMARY KEY (MaHD, MaSach)
