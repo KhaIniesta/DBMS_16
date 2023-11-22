@@ -62,3 +62,16 @@ CREATE FUNCTION Func_LayBangPhieuNhap()
 RETURNS TABLE
 AS 
 	RETURN (SELECT * FROM PhieuNhap)
+
+
+Go
+CREATE FUNCTION func_DangNhap(@TenDangNhap varchar(50), @MatKhau varchar(50))
+RETURNS INT
+	AS
+	BEGIN
+		 DECLARE @Cap int = 0;
+		 SELECT @Cap = Cap
+		 FROM TaiKhoan
+		 WHERE TenDangNhap = @TenDangNhap AND MatKhau = @MatKhau
+	RETURN @Cap;
+END;
