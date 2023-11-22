@@ -204,3 +204,13 @@ EXEC Proc_ThemTaiKhoan
 	@TenDangNhap = 'admin_sach',
 	@MatKhau  = '123',
 	@Cap = 1
+
+EXEC Proc_ThemTaiKhoan
+	@TenDangNhap = 'thungan',
+	@MatKhau  = '456',
+	@Cap = 3
+
+EXEC Proc_ThemTaiKhoan
+	@TenDangNhap = 'qlkho',
+	@MatKhau  = '789',
+	@Cap = 2
