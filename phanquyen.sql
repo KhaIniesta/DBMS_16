@@ -1,21 +1,5 @@
 --================ PHÂN QUYỀN ================
 -- THIẾT LẬP CÁC ROLE:
--- 1. Tạo role cho admin: toàn quyền --------------------------------
-CREATE ROLE admin_nhasach
---Gán các quyền trên table cho role admin_nhasach
-GRANT SELECT,INSERT,UPDATE, DELETE ON NhaXuatBan TO admin_nhasach
-GRANT SELECT,INSERT,UPDATE, DELETE ON TacGia TO admin_nhasach
-GRANT SELECT,INSERT,UPDATE, DELETE ON Sach TO admin_nhasach
-GRANT SELECT,INSERT,UPDATE, DELETE ON PhieuNhap TO admin_nhasach
-GRANT SELECT,INSERT,UPDATE, DELETE ON ChiTietPhieuNhap TO admin_nhasach
-GRANT SELECT,INSERT,UPDATE, DELETE ON HoaDon TO admin_nhasach
-GRANT SELECT,INSERT,UPDATE, DELETE ON ChiTietHoaDon TO admin_nhasach
-GO
---. Gán toàn bộ quyền thực thi trên các procedure, function cho role admin_nhasach
-GRANT EXECUTE to admin_nhasach
-GRANT SELECT TO admin_nhasach
-GO
-
 -- 2. Tạo role cho NhanVienThuNgan: thêm, sửa, xóa Hóa đơn, CT hóa đơn--------------------------------
 CREATE ROLE NhanVienThuNgan
 --Gán các quyền trên table cho role admin_nhasach
@@ -113,25 +97,25 @@ BEGIN
         SELECT TenDangNhap, MatKhau, Cap
         FROM INSERTED
         --Tạo login
-        SET @sqlString= 'CREATE LOGIN ' + @TenDangNhap + ' WITH PASSWORD = '''+ @MatKhau +''' '
+        SET @sqlString= 'CREATE LOGIN [' + @TenDangNhap + '] WITH PASSWORD = '''+ @MatKhau +''' '
         EXEC (@sqlString)
         --Tạo user
-        SET @sqlString= 'CREATE USER ' + @TenDangNhap +' FOR LOGIN '+ @TenDangNhap
+        SET @sqlString= 'CREATE USER [' + @TenDangNhap +'] FOR LOGIN ['+ @TenDangNhap + ']'
         EXEC (@sqlString)
         --Add thêm 1 user vào role
         IF @Cap = 1
             BEGIN
-                SET @sqlString = 'ALTER ROLE admin_nhasach ADD MEMBER '+ @TenDangNhap;
+                SET @sqlString = 'ALTER SERVER ROLE sysadmin ADD MEMBER ['+ @TenDangNhap + ']';
             END
 
         ELSE IF @Cap = 2
             BEGIN
-                SET @sqlString = 'ALTER ROLE NhanVienThuNgan ADD MEMBER '+ @TenDangNhap;
+                SET @sqlString = 'ALTER ROLE NhanVienThuNgan ADD MEMBER ['+ @TenDangNhap + ']';
             END
 
         ELSE -- @Cap = 3
             BEGIN
-                SET @sqlString = 'ALTER ROLE QuanLiKho ADD MEMBER ' + @TenDangNhap;
+                SET @sqlString = 'ALTER ROLE QuanLiKho ADD MEMBER [' + @TenDangNhap + ']';
             END
         EXEC (@sqlString)
     END
