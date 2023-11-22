@@ -5,6 +5,9 @@ CREATE ROLE NhanVienThuNgan
 --Gán các quyền trên table cho role admin_nhasach
 GRANT SELECT,INSERT,UPDATE, DELETE ON HoaDon TO NhanVienThuNgan
 GRANT SELECT,INSERT,UPDATE, DELETE ON ChiTietHoaDon TO NhanVienThuNgan
+GRANT SELECT ON Sach TO NhanVienThuNgan
+GRANT SELECT ON TacGia TO NhanVienThuNgan
+GRANT SELECT ON NhaXuatBan TO NhanVienThuNgan
 GO
 --. Gán quyền thực thi trên các procedure, function cho role NhanVienThuNgan
 GRANT EXECUTE ON Proc_ThemMaHoaDon TO NhanVienThuNgan
@@ -20,7 +23,6 @@ GRANT EXECUTE ON Proc_XoaHoaDon TO NhanVienThuNgan
 GRANT EXECUTE ON Proc_HienCTHDTheoTenSach TO NhanVienThuNgan
 GRANT EXECUTE ON Proc_CapNhatHoaDon TO NhanVienThuNgan
 GRANT EXECUTE ON Proc_XuatHoaDon TO NhanVienThuNgan
-
 GO
 
 -- 3. Tạo role cho QuanLiKho: thêm, sửa, xóa Tác giả, Sách, Phiếu nhập, CT Phiếu nhập --------------------------------
@@ -138,14 +140,14 @@ BEGIN
 END
 BEGIN 
     BEGIN TRY
+        --Xóa tài khoản trong table Account
+        DELETE FROM TaiKhoan WHERE TenDangNhap = @TenDangNhap
         -- Xóa User trong database
         SET @sqlString = 'DROP USER '+ @TenDangNhap
         EXEC (@sqlString)
         --Xóa login
         SET @sqlString = 'DROP LOGIN '+ @TenDangNhap
         EXEC (@sqlString)
-        --Xóa tài khoản trong table Account
-        DELETE FROM TaiKhoan WHERE TenDangNhap = @TenDangNhap
     END TRY
     BEGIN CATCH
         DECLARE @err nvarchar(MAX)
