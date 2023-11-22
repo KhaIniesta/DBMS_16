@@ -335,13 +335,14 @@ begin
 		insert into ChiTietHoaDon(MaHD, MaSach, SoLuongBan) values (@mahd, @masach, @soluong)
 	end
 end
+go
 
 --16. Trigger kiểm tra MaTG có tồn tại trước đó hay không
 CREATE TRIGGER TG_KiemTraMaTacGia
 ON TacGia
 INSTEAD OF INSERT
 AS
-BEGIN
+BEGIN	
 		-- Kiểm tra xem MaTG đã tồn tại hay chưa
     IF NOT EXISTS (SELECT * FROM TacGia TG WHERE TG.MaTG IN (SELECT MaTG FROM inserted))
     BEGIN
