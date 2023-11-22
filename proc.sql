@@ -51,49 +51,8 @@ BEGIN
 	DELETE Sach 
 	WHERE MaSach = @MaSach
 END
-
---1.d Hiển thị chi tiết sách
-GO
-create procedure Proc_HienChiTietSach
-as
-begin
-	select Sach.MaSach, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, Sach.SoLuongSach, Sach.Gia, Sach.TenSach, Sach.Anh
-	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach 
-	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
-	join TacGia on Sach.MaTG = TacGia.MaTG
-	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
-end
 go
 
---1.e Hiển thị sách theo mã sách
-create procedure Proc_HienSachtheoMaSach
-	@MaSach nchar(10)
-as
-begin
-	select Sach.MaSach, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, Sach.SoLuongSach, Sach.Gia, Sach.TenSach
-	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach 
-	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
-	join TacGia on Sach.MaTG = TacGia.MaTG
-	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
-	where Sach.MaSach = @MaSach
-end
-go
-
-
---4.f Tìm kiếm toàn bộ Mã sách
-create procedure Proc_TimKiemMaSach
-as
-begin
-	select distinct MaSach from Sach order by MaSach 
-end
-go
-
-create procedure Proc_TimKiemTenSach
-as
-begin
-	select TenSach from Sach order by TenSach
-end
-go 
 -- 2. Tạo Proc CRUD phiếu nhập
 -- 2.a Thêm phiếu nhập
 GO 
@@ -177,14 +136,6 @@ begin
 end
 go
 
---4.b Hiện toàn bộ mã hóa đơn
-create procedure Proc_TimKiemMaHD
-as
-begin
-	select distinct MaHD, TongHD from HoaDon order by MaHD 
-end
-go
-
 --4.c Tìm kiếm theo mã hóa đơn trong bảng hóa đơn
 create procedure Proc_TimKiemTheoMaHD
 	@MaHD nchar(15)
@@ -226,17 +177,6 @@ begin
 end
 go
 --5. Proc cho CRUD bảng ChiTietHoaDon
---5.a Hiển thị chi tiết hóa đơn
-create procedure Proc_HienCTHD
-as
-begin
-	select Sach.MaSach , HoaDon.MaHD , TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, ChiTietHoaDon.SoLuongBan, Sach.Gia, Sach.TenSach, Sach.Anh
-	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach
-	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
-	join TacGia on Sach.MaTG = TacGia.MaTG
-	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
-	order by HoaDon.MaHD
-end
 go
 --5.b Hiện CTHD theo mã hóa đơn
 create procedure Proc_HienCTHDTheoMaHD @MaHD nchar(15)

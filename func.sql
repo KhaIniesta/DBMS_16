@@ -1,16 +1,6 @@
 use QLNhaSach
 go
 -- Tạo Func tìm kiếm sách
---a/ Tìm kiếm sách theo tên
-CREATE FUNCTION TimKiemSachTheoTen
-    (@TenSach NVARCHAR(100))
-RETURNS TABLE
-AS
-RETURN
-    SELECT *
-    FROM Sach
-    WHERE TenSach LIKE '%' + @TenSach + '%'
-GO
 --b/ Tìm kiếm sách theo tác giả
 CREATE FUNCTION TimKiemSachTheoTacGia
     (@TenTacGia NVARCHAR(50))
@@ -22,27 +12,6 @@ RETURN
     INNER JOIN TacGia ON Sach.MaTG = TacGia.MaTG
     WHERE TacGia.TenTG LIKE '%' + @TenTacGia + '%'
 GO
---c/ Tìm kiếm sách theo thể loại
-CREATE FUNCTION TimKiemSachTheoTheLoai
-    (@TenTheLoai NVARCHAR(50))
-RETURNS TABLE
-AS
-RETURN
-    SELECT *
-    FROM Sach
-    WHERE TheLoai LIKE '%' + @TenTheLoai + '%'
-GO
---d/ Tìm kiếm sách theo giá
-CREATE FUNCTION TimKiemSachTheoGia
-    (@GiaMin MONEY,
-     @GiaMax MONEY)
-RETURNS TABLE
-AS
-RETURN
-    SELECT *
-    FROM Sach
-    WHERE Gia BETWEEN @GiaMin AND @GiaMax
-
 
 --4.1 func tính doanh thu theo ngày tháng năm
 go

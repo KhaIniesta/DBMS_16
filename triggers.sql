@@ -1,142 +1,8 @@
 -- PHẦN TẠO CÁC TRIGGER:==========================================================================
 use QLNhaSach
--- 1. Kiểm tra thông tin sách lúc nhập kho có bị trùng không, nếu mã sách đã tồn tại và mã nxb của sách đúng với mã nxb ở phiếu nhập tương ứng thì tăng số lượng sách trong bảng sách
-IF OBJECT_ID ('Trigger_TangSoLuongSach', 'TR') IS NOT NULL 
-  DROP TRIGGER TG_Trigger_TangSoLuongSach; 
-GO
-CREATE TRIGGER TG_Trigger_TangSoLuongSach
-ON ChiTietPhieuNhap
-INSTEAD OF INSERT
-AS
-BEGIN
-    -- Kiểm tra và cập nhật số lượng sách
-    DECLARE @MaPhieuNhap NCHAR(10)
-    DECLARE @MaSach NCHAR(10)
-    
-    SELECT @MaPhieuNhap = i.MaPhieuNhap, @MaSach = i.MaSach
-    FROM inserted i
-
-    IF EXISTS (
-        SELECT 1
-        FROM Sach s
-        INNER JOIN PhieuNhap pn ON s.MaNXB = pn.MaNXB
-        WHERE s.MaSach = @MaSach
-        AND pn.MaPhieuNhap = @MaPhieuNhap
-    )
-		BEGIN
-			-- Tăng số lượng sách
-			UPDATE Sach
-			SET SoLuongSach = SoLuongSach + (SELECT SoLuongNhap FROM inserted WHERE MaPhieuNhap = @MaPhieuNhap AND MaSach = @MaSach)
-			WHERE MaSach = @MaSach
-			RAISERROR('Đã tăng số lượng sách', 16, 1)
-			-- Chèn dữ liệu vào bảng ChiTietPhieuNhap
-			INSERT INTO ChiTietPhieuNhap (MaPhieuNhap, MaSach, SoLuongNhap)
-			SELECT MaPhieuNhap, MaSach, SoLuongNhap FROM inserted
-		END
-    ELSE
-		BEGIN
-			RAISERROR('Sách chưa tồn tại', 16, 1)
-		END
-END
-GO
-
--- 2. Kiểm tra số lượng từng loại sách trong kho có đủ để bán không
-CREATE TRIGGER TG_KTSachTrongKho
-ON ChiTietHoaDon
-FOR INSERT, UPDATE
-AS
-BEGIN
-	DECLARE @SoLuongSach INT, @SoLuongBan INT
-	
-	SELECT @SoLuongSach = Sach.SoLuongSach, @SoLuongBan = inserted.SoLuongBan
-	FROM Sach join inserted ON Sach.MaSach = inserted.MaSach
-
-	IF (@SoLuongSach<@SoLuongBan)
-		BEGIN
-			RAISERROR('Số lượng sách trong kho không đủ để bán ', 16, 1);
-			Rollback;
-		END;
-END;
-
---3. Trigger cap nhat so luong sach sau khi dat hang - xuat hoa don 
-
--- 3.a Sau khi đặt hàng - xuất hóa đơn
---Cong thuc tinh sl con lai: soluongsach = soluongsach - soluongban + soluonghuy
-go
-create trigger TG_SoLuongSauDatHang on ChiTietHoaDon
-after insert as
-begin
-	update Sach
-	set SoLuongSach = SoLuongSach - (select SoLuongBan from inserted where MaSach = Sach.MaSach)
-	from Sach join inserted on Sach.MaSach = inserted.MaSach
-end;
-go
-
--- 3.b Sau khi xóa hoặc hủy đơn hàng - xóa khỏi danh sách hóa đơn
-create trigger TG_SoLuongSauXoaDatHang on ChiTietHoaDon
-for delete as
-begin
-	update Sach
-	set SoLuongSach = SoLuongSach + (select SoLuongBan from deleted where MaSach = Sach.MaSach)
-	from Sach join deleted on Sach.MaSach = deleted.MaSach
-end;
-go
-
--- 3.c Sau khi cập nhật lại số lượng sách trong hóa đơn
-create trigger TG_SoLuongSauCapNhat on ChiTietHoaDon
-after update as
-begin
-	update Sach
-	set SoLuongSach = SoLuongSach - (select SoLuongBan from inserted where MaSach = Sach.MaSach)
-	+ (select SoLuongBan from deleted where MaSach = Sach.MaSach)
-	from Sach join deleted on Sach.MaSach = deleted.MaSach
-end;
-go
-
---  4. Tính giá của từng mặt hàng trong chi tiết hóa đơn = Giá(bảng sách) * số lượng(chi tiết hóa dơn)
-IF OBJECT_ID ('Trigger_TinhGiaChiTietHoaDon', 'TR') IS NOT NULL 
-  DROP TRIGGER TG_Trigger_TinhGiaChiTietHoaDon; 
-GO
-
-CREATE TRIGGER TG_Trigger_TinhGiaChiTietHoaDon
-ON ChiTietHoaDon
-AFTER INSERT, UPDATE
-AS
-BEGIN
-    -- Cập nhật giá (Gia) trong ChiTietHoaDon
-    UPDATE ChiTietHoaDon
-    SET Gia = Sach.Gia * inserted.SoLuongBan
-    FROM ChiTietHoaDon
-    INNER JOIN inserted ON ChiTietHoaDon.MaHD = inserted.MaHD AND ChiTietHoaDon.MaSach = inserted.MaSach
-    INNER JOIN Sach ON ChiTietHoaDon.MaSach = Sach.MaSach;
-END
-GO
-
-----5. Trigger cập nhật tổng hóa đơn trong bảng hóa đơn 
--- 5.a Cập nhật lại tổng hóa đơn sau khi thêm sp (thêm giá) vào chi tiết hóa đơn
-create trigger TG_TinhTongHoaDonKhiThem on ChiTietHoaDon
-after update as
-begin
-	update HoaDon
-	set TongHD = TongHD + (select sum(Gia) from inserted where MaHD = HoaDon.MaHD) - (select sum(Gia) from deleted where MaHD = HoaDon.MaHD)
-	from HoaDon join deleted on HoaDon.MaHD = deleted.MaHD
-end;
-go
--- 5.b Cập nhật lại tổng hóa đơn sau khi xóa sp ra khỏi chi tiết hóa đơn
-create trigger TG_TinhTongHoaDonKhiXoa on ChiTietHoaDon
-after delete as
-begin
-	update HoaDon
-	set TongHD = TongHD - (select sum(Gia) from deleted where MaHD = HoaDon.MaHD)
-	from HoaDon join deleted on HoaDon.MaHD = deleted.MaHD
-end;
-go
-
---4.2 CRUD bảng NXB
---trigger phat hien da co nha xuat ban nay
 go 
-CREATE TRIGGER trg_InsertNhaXuatBan
-ON NhaXuatBan
+--1. trigger phat hien da co nha xuat ban nay
+CREATE TRIGGER trg_InsertNhaXuatBan ON NhaXuatBan
 FOR INSERT, UPDATE
 AS
 BEGIN
@@ -168,10 +34,9 @@ BEGIN
 		RETURN
 	END
 END
-
---6. Trigger bảng
--- Trigger bắt lỗi nhập thiếu thông tin khi thêm, sửa, xoá cho bảng TacGia
 GO
+
+-- 2. Trigger bắt lỗi nhập thiếu thông tin khi thêm, sửa, xoá cho bảng TacGia
 CREATE TRIGGER TG_Trigger_TacGia_InsUpdDel
 ON TacGia
 AFTER INSERT, UPDATE, DELETE
@@ -185,8 +50,9 @@ BEGIN
         RETURN
     END
 END
-
 GO
+
+-- 3. Trigger 
 CREATE TRIGGER TG_Trigger_TacGia_Change
 ON TacGia
 AFTER UPDATE
@@ -202,37 +68,32 @@ BEGIN
         INNER JOIN inserted ON Sach.MaTG = inserted.MaTG;
     END;
 END;
+GO
 
-GO
--- Nếu phiếu nhập có xuất hiện bên chi tiết phiếu nhập thì không cho xóa
-IF OBJECT_ID ('TG_PhieuNhap_Delete', 'TR') IS NOT NULL 
-  DROP TRIGGER TG_PhieuNhap_Delete; 
-GO
-CREATE TRIGGER TG_PhieuNhap_Delete
-ON PhieuNhap
-INSTEAD OF DELETE
+--4. Trigger kiểm tra sách đã tồn tại trước đó
+CREATE TRIGGER TG_KiemTraTrungSach
+ON Sach
+INSTEAD OF INSERT
 AS
 BEGIN
-    DECLARE @DeletedMaPhieuNhap NCHAR(10);
-
-    -- Lấy các MaPhieuNhap bị xóa
-    SELECT @DeletedMaPhieuNhap = MaPhieuNhap
-    FROM DELETED;
-
-    -- Kiểm tra xem có MaPhieuNhap nào được tham chiếu từ ChiTietPhieuNhap không
-    IF EXISTS (SELECT 1 FROM ChiTietPhieuNhap WHERE MaPhieuNhap = @DeletedMaPhieuNhap)
+    DECLARE @InsertedMaSach NCHAR(10);
+	SELECT @InsertedMaSach = MaSach
+    FROM INSERTED;
+   
+    IF EXISTS (SELECT 1 FROM Sach WHERE MaSach = @InsertedMaSach)
     BEGIN
-        RAISERROR ('Phiếu nhập đã xuất hiện bên chi tiết phiếu nhập, chọn Yes sẽ xóa phiếu nhập hiện tại và chi tiết phiếu nhập!', 16, 1);
+        RAISERROR ('Sách đã có trước đó!', 16, 1);
     END
-    ELSE
-    BEGIN
-        -- Xóa bản ghi từ bảng PhieuNhap
-        DELETE FROM PhieuNhap WHERE MaPhieuNhap = @DeletedMaPhieuNhap;
-    END
-END;
-
+	ELSE 
+	BEGIN
+		INSERT INTO Sach(MaSach,MaTG,MaNXB,TenSach,SoLuongSach,Gia,TheLoai)
+		SELECT MaSach, MaTG, MaNXB, TenSach, SoLuongSach, Gia, TheLoai
+		FROM INSERTED
+	END
+END
 GO
--- Nếu Sách có xuất hiện bên chi tiết phiếu nhập hoặc có xuất hiện bên CTHD thì không cho xóa
+
+--5. Nếu Sách có xuất hiện bên chi tiết phiếu nhập hoặc có xuất hiện bên CTHD thì không cho xóa
 IF OBJECT_ID ('TG_Sach_Delete', 'TR') IS NOT NULL 
   DROP TRIGGER TG_Sach_Delete; 
 GO
@@ -262,6 +123,202 @@ BEGIN
         DELETE FROM Sach WHERE MaSach = @DeletedMaSach;
     END
 END;
+GO
+
+--6. Trigger kiểm tra phiếu nhập tồn tại trước đó
+CREATE TRIGGER TG_KiemTraTrungPhieuNhap
+ON PhieuNhap
+INSTEAD OF INSERT
+AS
+BEGIN
+    DECLARE @InsertedMaPhieuNhap NCHAR(10);
+	SELECT @InsertedMaPhieuNhap = MaPhieuNhap
+    FROM INSERTED;
+
+    IF EXISTS (SELECT 1 FROM PhieuNhap WHERE MaPhieuNhap = @InsertedMaPhieuNhap)
+    BEGIN
+        RAISERROR ('Phiếu nhập đã có trước đó!', 16, 1);
+    END
+	ELSE 
+	BEGIN
+		INSERT INTO PhieuNhap(MaPhieuNhap,MaNXB,NgayNhap)
+		SELECT MaPhieuNhap,MaNXB,NgayNhap
+		FROM INSERTED
+	END
+END
+GO
+
+-- 7. Nếu phiếu nhập có xuất hiện bên chi tiết phiếu nhập thì không cho xóa
+IF OBJECT_ID ('TG_PhieuNhap_Delete', 'TR') IS NOT NULL 
+  DROP TRIGGER TG_PhieuNhap_Delete; 
+GO
+CREATE TRIGGER TG_PhieuNhap_Delete
+ON PhieuNhap
+INSTEAD OF DELETE
+AS
+BEGIN
+    DECLARE @DeletedMaPhieuNhap NCHAR(10);
+
+    -- Lấy các MaPhieuNhap bị xóa
+    SELECT @DeletedMaPhieuNhap = MaPhieuNhap
+    FROM DELETED;
+
+    -- Kiểm tra xem có MaPhieuNhap nào được tham chiếu từ ChiTietPhieuNhap không
+    IF EXISTS (SELECT 1 FROM ChiTietPhieuNhap WHERE MaPhieuNhap = @DeletedMaPhieuNhap)
+    BEGIN
+        RAISERROR ('Phiếu nhập đã xuất hiện bên chi tiết phiếu nhập, chọn Yes sẽ xóa phiếu nhập hiện tại và chi tiết phiếu nhập!', 16, 1);
+    END
+    ELSE
+    BEGIN
+        -- Xóa bản ghi từ bảng PhieuNhap
+        DELETE FROM PhieuNhap WHERE MaPhieuNhap = @DeletedMaPhieuNhap;
+    END
+END;
+GO
+
+-- 8. Kiểm tra thông tin sách lúc nhập kho có bị trùng không, nếu mã sách đã tồn tại và mã nxb của sách đúng với mã nxb ở phiếu nhập tương ứng thì tăng số lượng sách trong bảng sách
+IF OBJECT_ID ('Trigger_TangSoLuongSach', 'TR') IS NOT NULL 
+  DROP TRIGGER TG_Trigger_TangSoLuongSach; 
+GO
+CREATE TRIGGER TG_Trigger_TangSoLuongSach
+ON ChiTietPhieuNhap
+INSTEAD OF INSERT
+AS
+BEGIN
+    DECLARE @InsertedMaPhieuNhap NCHAR(10)
+	DECLARE @InsertedMaSach NCHAR(10)
+
+	SELECT @InsertedMaPhieuNhap = MaPhieuNhap, @InsertedMaSach = MaSach
+    FROM INSERTED
+
+    IF EXISTS (SELECT 1 FROM ChiTietPhieuNhap WHERE MaPhieuNhap = @InsertedMaPhieuNhap AND MaSach = @InsertedMaSach)
+    BEGIN
+        RAISERROR ('Chi tiết phiếu nhập đã có trước đó!', 16, 1);
+    END
+	ELSE 
+	BEGIN
+		-- Kiểm tra và cập nhật số lượng sách
+		DECLARE @MaPhieuNhap NCHAR(10)
+		DECLARE @MaSach NCHAR(10)
+    
+		SELECT @MaPhieuNhap = i.MaPhieuNhap, @MaSach = i.MaSach
+		FROM inserted i
+
+		IF EXISTS (
+			SELECT 1
+			FROM Sach s
+			INNER JOIN PhieuNhap pn ON s.MaNXB = pn.MaNXB
+			WHERE s.MaSach = @MaSach
+			AND pn.MaPhieuNhap = @MaPhieuNhap
+		)
+		BEGIN
+			-- Tăng số lượng sách
+			UPDATE Sach
+			SET SoLuongSach = SoLuongSach + (SELECT SoLuongNhap FROM inserted WHERE MaPhieuNhap = @MaPhieuNhap AND MaSach = @MaSach)
+			WHERE MaSach = @MaSach
+			RAISERROR('Đã tăng số lượng sách', 16, 1)
+			-- Chèn dữ liệu vào bảng ChiTietPhieuNhap
+			INSERT INTO ChiTietPhieuNhap (MaPhieuNhap, MaSach, SoLuongNhap)
+			SELECT MaPhieuNhap, MaSach, SoLuongNhap FROM inserted
+		END
+		ELSE
+		BEGIN
+			RAISERROR('Sách chưa tồn tại', 16, 1)
+		END
+	END
+END
+GO
+
+-- 9. Kiểm tra số lượng từng loại sách trong kho có đủ để bán không
+CREATE TRIGGER TG_KTSachTrongKho
+ON ChiTietHoaDon
+FOR INSERT, UPDATE
+AS
+BEGIN
+	DECLARE @SoLuongSach INT, @SoLuongBan INT
+	
+	SELECT @SoLuongSach = Sach.SoLuongSach, @SoLuongBan = inserted.SoLuongBan
+	FROM Sach join inserted ON Sach.MaSach = inserted.MaSach
+
+	IF (@SoLuongSach<@SoLuongBan)
+		BEGIN
+			RAISERROR('Số lượng sách trong kho không đủ để bán ', 16, 1);
+			Rollback;
+		END;
+END;
+
+--. Trigger cap nhat so luong sach sau khi dat hang - xuat hoa don 
+
+-- 10. Sau khi đặt hàng - xuất hóa đơn
+--Cong thuc tinh sl con lai: soluongsach = soluongsach - soluongban + soluonghuy
+go
+create trigger TG_SoLuongSauDatHang on ChiTietHoaDon
+after insert as
+begin
+	update Sach
+	set SoLuongSach = SoLuongSach - (select SoLuongBan from inserted where MaSach = Sach.MaSach)
+	from Sach join inserted on Sach.MaSach = inserted.MaSach
+end;
+go
+
+-- 11. Sau khi xóa hoặc hủy đơn hàng - xóa khỏi danh sách hóa đơn
+create trigger TG_SoLuongSauXoaDatHang on ChiTietHoaDon
+for delete as
+begin
+	update Sach
+	set SoLuongSach = SoLuongSach + (select SoLuongBan from deleted where MaSach = Sach.MaSach)
+	from Sach join deleted on Sach.MaSach = deleted.MaSach
+end;
+go
+
+-- 12. Sau khi cập nhật lại số lượng sách trong hóa đơn
+create trigger TG_SoLuongSauCapNhat on ChiTietHoaDon
+after update as
+begin
+	update Sach
+	set SoLuongSach = SoLuongSach - (select SoLuongBan from inserted where MaSach = Sach.MaSach)
+	+ (select SoLuongBan from deleted where MaSach = Sach.MaSach)
+	from Sach join deleted on Sach.MaSach = deleted.MaSach
+end;
+go
+
+--  13. Tính giá của từng mặt hàng trong chi tiết hóa đơn = Giá(bảng sách) * số lượng(chi tiết hóa dơn)
+IF OBJECT_ID ('Trigger_TinhGiaChiTietHoaDon', 'TR') IS NOT NULL 
+  DROP TRIGGER TG_Trigger_TinhGiaChiTietHoaDon; 
+GO
+
+CREATE TRIGGER TG_Trigger_TinhGiaChiTietHoaDon
+ON ChiTietHoaDon
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    -- Cập nhật giá (Gia) trong ChiTietHoaDon
+    UPDATE ChiTietHoaDon
+    SET Gia = Sach.Gia * inserted.SoLuongBan
+    FROM ChiTietHoaDon
+    INNER JOIN inserted ON ChiTietHoaDon.MaHD = inserted.MaHD AND ChiTietHoaDon.MaSach = inserted.MaSach
+    INNER JOIN Sach ON ChiTietHoaDon.MaSach = Sach.MaSach;
+END
+GO
+
+---- Trigger cập nhật tổng hóa đơn trong bảng hóa đơn 
+-- 14. Cập nhật lại tổng hóa đơn sau khi thêm sp (thêm giá) vào chi tiết hóa đơn
+create trigger TG_TinhTongHoaDonKhiThem on ChiTietHoaDon
+after update as
+begin
+	update HoaDon
+	set TongHD = TongHD + (select sum(Gia) from inserted where MaHD = HoaDon.MaHD) - (select sum(Gia) from deleted where MaHD = HoaDon.MaHD)
+	from HoaDon join deleted on HoaDon.MaHD = deleted.MaHD
+end;
+go
+-- 15. Cập nhật lại tổng hóa đơn sau khi xóa sp ra khỏi chi tiết hóa đơn
+create trigger TG_TinhTongHoaDonKhiXoa on ChiTietHoaDon
+after delete as
+begin
+	update HoaDon
+	set TongHD = TongHD - (select sum(Gia) from deleted where MaHD = HoaDon.MaHD)
+	from HoaDon join deleted on HoaDon.MaHD = deleted.MaHD
+end;
 go
 
 -- Trigger check trùng mã sách khi nhập vào chi tiết hóa đơn
