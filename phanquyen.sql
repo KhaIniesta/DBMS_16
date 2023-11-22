@@ -145,10 +145,10 @@ BEGIN
         --Xóa tài khoản trong table Account
         DELETE FROM TaiKhoan WHERE TenDangNhap = @TenDangNhap
         -- Xóa User trong database
-        SET @sqlString = 'DROP USER '+ @TenDangNhap
+        SET @sqlString = 'DROP USER ['+ @TenDangNhap + ']'
         EXEC (@sqlString)
         --Xóa login
-        SET @sqlString = 'DROP LOGIN '+ @TenDangNhap
+        SET @sqlString = 'DROP LOGIN ['+ @TenDangNhap + ']'
         EXEC (@sqlString)
     END TRY
     BEGIN CATCH
