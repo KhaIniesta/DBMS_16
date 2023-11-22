@@ -320,3 +320,25 @@ begin
 	from HoaDon join deleted on HoaDon.MaHD = deleted.MaHD
 end;
 go
+
+--16. Trigger kiểm tra MaTG có tồn tại trước đó hay không
+CREATE TRIGGER TG_KiemTraMaTacGia
+ON TacGia
+INSTEAD OF INSERT
+AS
+BEGIN
+		-- Kiểm tra xem MaTG đã tồn tại hay chưa
+    IF NOT EXISTS (SELECT * FROM TacGia TG WHERE TG.MaTG IN (SELECT MaTG FROM inserted))
+    BEGIN
+        -- Thêm dữ liệu vào bảng TacGia nếu MaTG không tồn tại
+        INSERT INTO TacGia (MaTG, MaNXB, TenTG, LienHe)
+        SELECT MaTG, MaNXB, TenTG, LienHe
+        FROM inserted;
+    END
+    ELSE
+    BEGIN
+        
+        RAISERROR('MaTG đã tồn tại!', 16, 1);
+    END
+END;
+go
