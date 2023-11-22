@@ -145,16 +145,17 @@ BEGIN
         --Xóa tài khoản trong table Account
         DELETE FROM TaiKhoan WHERE TenDangNhap = @TenDangNhap
         -- Xóa User trong database
-        SET @sqlString = 'DROP USER '+ @TenDangNhap
+        SET @sqlString = 'DROP USER ['+ @TenDangNhap + ']'
         EXEC (@sqlString)
         --Xóa login
-        SET @sqlString = 'DROP LOGIN '+ @TenDangNhap
+        SET @sqlString = 'DROP LOGIN ['+ @TenDangNhap + ']'
         EXEC (@sqlString)
     END TRY
     BEGIN CATCH
         DECLARE @err nvarchar(MAX)
         SELECT @err = ERROR_MESSAGE()
         RAISERROR(@err,16,1)
+        ROLLBACK
     END CATCH
 END
 GO
