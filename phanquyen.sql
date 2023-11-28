@@ -137,8 +137,19 @@ FROM sys.dm_exec_sessions
 WHERE login_name = @TenDangNhap;
 IF @sessionID IS NOT NULL
 BEGIN
-    SET @sqlString = 'KILL ' + Convert(NVARCHAR(20), @sessionID)
-    EXEC(@sqlString)
+	-- Kiểm tra nếu là phiên làm việc hiện tại, không cho phép xóa
+    IF @sessionID = @@SPID
+    BEGIN
+        RAISERROR ('Tài khoản muốn xóa đang là tài khoản hiện tại, không được xóa!', 16, 1);
+        RETURN; -- Kết thúc thủ tục
+    END
+	ELSE
+	BEGIN
+		-- Ngắt kết nối của tài khoản sắp bị xóa
+		SET @sqlString = 'KILL ' + CAST(@sessionID AS NVARCHAR(10));
+		EXEC sp_executesql @sqlString;
+	END
+
 END
 BEGIN 
     BEGIN TRY
@@ -155,6 +166,7 @@ BEGIN
         DECLARE @err nvarchar(MAX)
         SELECT @err = ERROR_MESSAGE()
         RAISERROR(@err,16,1)
+        ROLLBACK
     END CATCH
 END
 GO
@@ -189,9 +201,97 @@ begin
 end
 GO
 
+
+CREATE PROCEDURE Proc_CapNhatTaiKhoan
+    @TenDangNhap VARCHAR(50),
+    @MatKhauMoi VARCHAR(10),
+    @CapMoi INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @MatKhauHienTai NCHAR(10);
+    DECLARE @CapHienTai INT;
+
+    BEGIN TRY
+        -- Bắt đầu transaction
+        BEGIN TRANSACTION;
+
+        -- Lấy mật khẩu và cấp hiện tại của người dùng
+        SELECT @MatKhauHienTai = MatKhau, @CapHienTai = Cap
+        FROM TaiKhoan
+        WHERE TenDangNhap = @TenDangNhap;
+
+        -- Kiểm tra xem có thay đổi mật khẩu hay không
+        IF @MatKhauMoi IS NOT NULL AND @MatKhauMoi <> @MatKhauHienTai
+        BEGIN
+            -- Cập nhật mật khẩu trong bảng TaiKhoan
+            UPDATE TaiKhoan
+            SET MatKhau = @MatKhauMoi
+            WHERE TenDangNhap = @TenDangNhap;
+
+            -- Cập nhật mật khẩu cho tài khoản SQL Server
+            EXEC('ALTER LOGIN [' + @TenDangNhap + '] WITH PASSWORD = ''' + @MatKhauMoi + '''')
+        END
+
+        -- Kiểm tra xem có thay đổi cấp hay không
+        IF @CapMoi IS NOT NULL AND @CapMoi <> @CapHienTai
+        BEGIN
+            -- Cập nhật role cho tài khoản
+            IF @CapMoi = 1
+                EXEC sp_addsrvrolemember  @TenDangNhap, 'sysadmin'
+            ELSE IF @CapMoi = 2
+                EXEC sp_addrolemember'NhanVienThuNgan',  @TenDangNhap
+            ELSE IF @CapMoi = 3
+                EXEC sp_addrolemember'QuanLiKho',  @TenDangNhap
+
+            -- Xóa role cho tài khoản
+            IF @CapHienTai = 1
+                EXEC sp_dropsrvrolemember @TenDangNhap, 'sysadmin'
+            ELSE IF @CapHienTai = 2
+                EXEC sp_droprolemember 'NhanVienThuNgan', @TenDangNhap
+            ELSE IF @CapHienTai = 3
+                EXEC sp_droprolemember 'QuanLiKho', @TenDangNhap
+
+            -- Cập nhật cấp trong bảng TaiKhoan
+            UPDATE TaiKhoan
+            SET Cap = @CapMoi
+            WHERE TenDangNhap = @TenDangNhap;
+        END
+
+        -- Commit transaction nếu không có lỗi
+        COMMIT;
+    END TRY
+    BEGIN CATCH
+        -- Nếu có lỗi, hủy bỏ transaction
+        RAISERROR ('Đã xảy ra lỗi trong quá trình cập nhật tài khoản!', 16, 1);
+        ROLLBACK;
+        -- Re-throw lỗi để nó được xử lý ở mức cao hơn
+        THROW;
+    END CATCH;
+		
+	-- Mật khẩu và cấp không thay đổi
+	IF @MatKhauMoi = @MatKhauHienTai AND @CapMoi = @CapHienTai
+    BEGIN
+        RAISERROR ('Mật khẩu và cấp không có sự thay đổi!', 16, 1);
+        RETURN; -- Kết thúc thủ tục
+    END
+END;
+GO
+
 EXEC Proc_ThemTaiKhoan
-	@TenDangNhap = 'admin_sach',
-	@MatKhau  = '123',
+	@TenDangNhap = 'admin1',
+	@MatKhau  = '111',
+	@Cap = 1
+
+EXEC Proc_ThemTaiKhoan
+	@TenDangNhap = 'admin2',
+	@MatKhau  = '222',
+	@Cap = 1
+
+EXEC Proc_ThemTaiKhoan
+	@TenDangNhap = 'admin3',
+	@MatKhau  = '333',
 	@Cap = 1
 
 EXEC Proc_ThemTaiKhoan
