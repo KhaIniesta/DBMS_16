@@ -137,8 +137,19 @@ FROM sys.dm_exec_sessions
 WHERE login_name = @TenDangNhap;
 IF @sessionID IS NOT NULL
 BEGIN
-    SET @sqlString = 'KILL ' + Convert(NVARCHAR(20), @sessionID)
-    EXEC(@sqlString)
+	-- Kiểm tra nếu là phiên làm việc hiện tại, không cho phép xóa
+    IF @sessionID = @@SPID
+    BEGIN
+        RAISERROR ('Tài khoản muốn xóa đang là tài khoản hiện tại, không được xóa!', 16, 1);
+        RETURN; -- Kết thúc thủ tục
+    END
+	ELSE
+	BEGIN
+		-- Ngắt kết nối của tài khoản sắp bị xóa
+		SET @sqlString = 'KILL ' + CAST(@sessionID AS NVARCHAR(10));
+		EXEC sp_executesql @sqlString;
+	END
+
 END
 BEGIN 
     BEGIN TRY
@@ -266,10 +277,21 @@ BEGIN
         RETURN; -- Kết thúc thủ tục
     END
 END;
+GO
 
 EXEC Proc_ThemTaiKhoan
-	@TenDangNhap = 'admin_sach',
-	@MatKhau  = '123',
+	@TenDangNhap = 'admin1',
+	@MatKhau  = '111',
+	@Cap = 1
+
+EXEC Proc_ThemTaiKhoan
+	@TenDangNhap = 'admin2',
+	@MatKhau  = '222',
+	@Cap = 1
+
+EXEC Proc_ThemTaiKhoan
+	@TenDangNhap = 'admin3',
+	@MatKhau  = '333',
 	@Cap = 1
 
 EXEC Proc_ThemTaiKhoan
