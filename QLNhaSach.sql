@@ -922,8 +922,7 @@ go
 create view V_HienChiTietSach
 as
 	select top(99.99) percent Sach.MaSach, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, Sach.SoLuongSach, Sach.Gia, Sach.TenSach, Sach.Anh
-	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach 
-	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
+	from Sach 
 	join TacGia on Sach.MaTG = TacGia.MaTG
 	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
 	order by Sach.TenSach
@@ -1346,33 +1345,12 @@ BEGIN
 END;
 GO
 
+USE QLNhaSach
+GO
 EXEC Proc_ThemTaiKhoan
 	@TenDangNhap = 'admin1',
 	@MatKhau  = '111',
 	@Cap = 1,
-    @TenNguoiDung = 'Lê Minh Kha'
+    @TenNguoiDung = 'Root'
 
-EXEC Proc_ThemTaiKhoan
-	@TenDangNhap = 'thungan',
-	@MatKhau  = '222',
-	@Cap = 2,
-    @TenNguoiDung = 'Nguyễn Diệu Hương'
-
-EXEC Proc_ThemTaiKhoan
-	@TenDangNhap = 'qlkho',
-	@MatKhau  = '333',
-	@Cap = 3,
-    @TenNguoiDung = 'Ngô Quốc Đạt'
-
-EXEC Proc_ThemTaiKhoan
-	@TenDangNhap = 'admin2',
-	@MatKhau  = '222',
-	@Cap = 1,
-    @TenNguoiDung = 'Đỗ Huỳnh Gia Khang'
-
-EXEC Proc_ThemTaiKhoan
-	@TenDangNhap = 'thungan2',
-	@MatKhau  = '222',
-	@Cap = 2,
-    @TenNguoiDung = 'Trần Quý Thương'
 
