@@ -918,24 +918,15 @@ create view V_DTNam as
 select MaHD, Year(NgayInHD) Nam, Month(NgayInHD) Thang, TongHD from HoaDon
 go
 
--- 6. View hiển thị chi tiết sách trong chi tiết hóa đơn
+-- 6. View hiển thị chi tiết sách
 create view V_HienChiTietSach
-as
-	select top(99.99) percent Sach.MaSach, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, Sach.SoLuongSach, Sach.Gia, Sach.TenSach, Sach.Anh
-	from Sach join ChiTietHoaDon on Sach.MaSach = ChiTietHoaDon.MaSach 
-	join HoaDon on ChiTietHoaDon.MaHD = HoaDon.MaHD 
-	join TacGia on Sach.MaTG = TacGia.MaTG
-	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
-	order by Sach.TenSach
-go
-
--- View hiển thị toàn bộ sách trong kho
-create view V_HienToanBoSach
 as
 	select top(99.99) percent Sach.MaSach, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, Sach.SoLuongSach, Sach.Gia, Sach.TenSach, Sach.Anh
 	from Sach, ChiTietHoaDon, HoaDon, TacGia, NhaXuatBan
 	order by Sach.TenSach
 go
+
+
 -- PHẦN INSERT DATA:==========================================================================
 use QLNhaSach
 -- Insert Data into NhaXuatBan:
