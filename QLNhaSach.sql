@@ -929,6 +929,13 @@ as
 	order by Sach.TenSach
 go
 
+-- View hiển thị toàn bộ sách trong kho
+create view V_HienToanBoSach
+as
+	select top(99.99) percent Sach.MaSach, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, Sach.SoLuongSach, Sach.Gia, Sach.TenSach, Sach.Anh
+	from Sach, ChiTietHoaDon, HoaDon, TacGia, NhaXuatBan
+	order by Sach.TenSach
+go
 -- PHẦN INSERT DATA:==========================================================================
 use QLNhaSach
 -- Insert Data into NhaXuatBan:
