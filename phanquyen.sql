@@ -25,6 +25,7 @@ GRANT EXECUTE ON Proc_XoaHoaDon TO NhanVienThuNgan
 GRANT EXECUTE ON Proc_HienCTHDTheoTenSach TO NhanVienThuNgan
 GRANT EXECUTE ON Proc_CapNhatHoaDon TO NhanVienThuNgan
 GRANT EXECUTE ON Proc_XuatHoaDon TO NhanVienThuNgan
+GRANT EXECUTE ON Proc_TimKiemSach TO NhanVienThuNgan
 GO
 
 -- 3. Tạo role cho QuanLiKho: thêm, sửa, xóa Tác giả, Sách, Phiếu nhập, CT Phiếu nhập --------------------------------

@@ -420,3 +420,26 @@ BEGIN
 	DELETE ChiTietPhieuNhap 
 	WHERE MaPhieuNhap = @MaPhieuNhap 
 END
+GO
+
+CREATE PROCEDURE Proc_TimKiemSach
+    @TuKhoa NVARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Chuyển đổi @TuKhoa sang chữ thường
+    DECLARE @TuKhoaLowerCase NVARCHAR(100);
+    SET @TuKhoaLowerCase = LOWER(@TuKhoa);
+
+    SELECT *
+    FROM Sach
+    WHERE
+        -- Tìm kiếm theo tên sách có hoặc không dấu (chuyển sang chữ thường)
+        (LOWER(TenSach) LIKE '%' + @TuKhoaLowerCase + '%' COLLATE Vietnamese_CI_AI) OR
+        (LOWER(TenSach) LIKE '%' + @TuKhoaLowerCase + '%' COLLATE SQL_Latin1_General_CP1253_CI_AI) OR
+        -- Tìm kiếm theo tên tác giả có hoặc không dấu (chuyển sang chữ thường)
+        EXISTS (SELECT 1 FROM TacGia WHERE Sach.MaTG = TacGia.MaTG AND (LOWER(TacGia.TenTG) LIKE '%' + @TuKhoaLowerCase + '%' COLLATE Vietnamese_CI_AI OR LOWER(TacGia.TenTG) LIKE '%' + @TuKhoaLowerCase + '%' COLLATE SQL_Latin1_General_CP1253_CI_AI)) OR
+        -- Tìm kiếm theo tên nhà xuất bản có hoặc không dấu (chuyển sang chữ thường)
+        EXISTS (SELECT 1 FROM NhaXuatBan WHERE Sach.MaNXB = NhaXuatBan.MaNXB AND (LOWER(NhaXuatBan.TenNXB) LIKE '%' + @TuKhoaLowerCase + '%' COLLATE Vietnamese_CI_AI OR LOWER(NhaXuatBan.TenNXB) LIKE '%' + @TuKhoaLowerCase + '%' COLLATE SQL_Latin1_General_CP1253_CI_AI));
+END;
