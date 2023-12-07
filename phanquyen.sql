@@ -63,7 +63,10 @@ GO
 CREATE TABLE TaiKhoan(
 	TenDangNhap varchar(50) PRIMARY KEY,
 	MatKhau varchar(50),
-	Cap int
+	Cap int,
+    TenNguoiDung NVARCHAR(50),
+    Anh IMAGE,
+    ChucVu NVARCHAR(50)
 )
 GO
 
@@ -71,13 +74,33 @@ GO
 CREATE PROC Proc_ThemTaiKhoan
 	@TenDangNhap varchar(50),
 	@MatKhau varchar(50),
-	@Cap int
+	@Cap int,
+    @TenNguoiDung NVARCHAR(50) = '',
+    @Anh IMAGE = NULL,
+    @ChucVu NVARCHAR(50)= ''
 AS
 BEGIN 
 	BEGIN 
-		INSERT INTO TaiKhoan VALUES(@TenDangNhap,@MatKhau,@Cap)
+		INSERT INTO TaiKhoan VALUES(@TenDangNhap, @MatKhau, @Cap, @TenNguoiDung, @Anh,  @ChucVu)
 	END 
 END
+GO
+
+-- Tự động tạo chức vụ khi insert tài khoản, sửa tài khoản
+CREATE TRIGGER TG_TaiKhoan_TuDongTaoChucVu ON TaiKhoan 
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    -- Cập nhật giá trị cột ChucVu dựa trên giá trị của cột Cap
+    UPDATE TaiKhoan
+    SET ChucVu = CASE 
+                    WHEN I.Cap = 1 THEN 'Admin'
+                    WHEN I.Cap = 2 THEN 'Nhân viên thu ngân'
+                    ELSE 'Quản lí kho' -- Giữ nguyên giá trị nếu Cap không phải 1 hoặc 2
+                END
+    FROM TaiKhoan T
+    INNER JOIN inserted I ON T.TenDangNhap = I.TenDangNhap;
+END;
 GO
 
 --3. Trigger thêm TaiKhoan
@@ -85,9 +108,9 @@ CREATE TRIGGER TG_ThemTaiKhoan ON TaiKhoan
 INSTEAD OF INSERT
 AS
 BEGIN
-    DECLARE @TenDangNhap nvarchar(30), @MatKhau nvarchar(10), @Cap int
+    DECLARE @TenDangNhap nvarchar(30), @MatKhau nvarchar(10), @Cap int, @TenNguoiDung NVARCHAR(50), @Anh VARBINARY(MAX)=NULL
     DECLARE @sqlString nvarchar(2000)
-    SELECT @TenDangNhap=i.TenDangNhap, @MatKhau=i.MatKhau, @Cap=i.Cap
+    SELECT @TenDangNhap=i.TenDangNhap, @MatKhau=i.MatKhau, @Cap=i.Cap, @TenNguoiDung = i.TenNguoiDung, @Anh=i.Anh
     FROM inserted i
 
     IF EXISTS (SELECT 1 FROM TaiKhoan WHERE TenDangNhap = @TenDangNhap)
@@ -97,8 +120,8 @@ BEGIN
     ELSE 
     BEGIN
         -- Insert account vào bảng Account
-        INSERT INTO TaiKhoan(TenDangNhap, MatKhau, Cap)
-        SELECT TenDangNhap, MatKhau, Cap
+        INSERT INTO TaiKhoan(TenDangNhap, MatKhau, Cap, TenNguoiDung, Anh)
+        SELECT TenDangNhap, MatKhau, Cap, TenNguoiDung, Anh
         FROM INSERTED
         --Tạo login
         SET @sqlString= 'CREATE LOGIN [' + @TenDangNhap + '] WITH PASSWORD = '''+ @MatKhau +''' '
@@ -145,9 +168,8 @@ BEGIN
     END
 	ELSE
 	BEGIN
-		-- Ngắt kết nối của tài khoản sắp bị xóa
-		SET @sqlString = 'KILL ' + CAST(@sessionID AS NVARCHAR(10));
-		EXEC sp_executesql @sqlString;
+        RAISERROR ('Tài khoản muốn xóa đang được đăng nhập!', 16, 1);
+        RETURN; 
 	END
 
 END
@@ -171,41 +193,12 @@ BEGIN
 END
 GO
 
---5. Proc thay đổi mật mật
-CREATE OR ALTER PROC proc_ThayDoiMatKhau
-@TenDangNhap varchar(10),
-@MatKhau varchar(20)
-as 
-begin
-	DECLARE @sql NVARCHAR(MAX);
-	DECLARE @user NVARCHAR(10)
-	DECLARE @MatKhauMoi NVARCHAR(20)
-	SET @user = @TenDangNhap
-    SET @MatKhauMoi = @MatKhau
-	BEGIN TRANSACTION
-	BEGIN TRY
-		
-		SET @sql = 'ALTER LOGIN [' + @user + '] WITH PASSWORD = ''' + @MatKhauMoi + '''';
-		EXEC(@sql)
-
-		UPDATE TaiKhoan set MatKhau = @MatKhauMoi WHERE TenDangNhap = @user;
-	END TRY
-	BEGIN CATCH
-		declare @err nvarchar(max);
-		set @err ='Không cập nhập được mật khẩu mới!';
-		raiserror(@err, 16,1);
-		rollback transaction;
-		throw;
-	END CATCH
-	COMMIT TRANSACTION
-end
-GO
-
-
 CREATE PROCEDURE Proc_CapNhatTaiKhoan
     @TenDangNhap VARCHAR(50),
     @MatKhauMoi VARCHAR(10),
-    @CapMoi INT
+    @CapMoi INT,
+    @TenNguoiDung NVARCHAR(50) = '',
+    @Anh IMAGE = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -216,7 +209,9 @@ BEGIN
     BEGIN TRY
         -- Bắt đầu transaction
         BEGIN TRANSACTION;
-
+        UPDATE TaiKhoan
+        SET TenNguoiDung = @TenNguoiDung, Anh = @Anh
+        WHERE TenDangNhap = @TenDangNhap
         -- Lấy mật khẩu và cấp hiện tại của người dùng
         SELECT @MatKhauHienTai = MatKhau, @CapHienTai = Cap
         FROM TaiKhoan
@@ -269,37 +264,36 @@ BEGIN
         -- Re-throw lỗi để nó được xử lý ở mức cao hơn
         THROW;
     END CATCH;
-		
-	-- Mật khẩu và cấp không thay đổi
-	IF @MatKhauMoi = @MatKhauHienTai AND @CapMoi = @CapHienTai
-    BEGIN
-        RAISERROR ('Mật khẩu và cấp không có sự thay đổi!', 16, 1);
-        RETURN; -- Kết thúc thủ tục
-    END
 END;
 GO
 
 EXEC Proc_ThemTaiKhoan
 	@TenDangNhap = 'admin1',
 	@MatKhau  = '111',
-	@Cap = 1
+	@Cap = 1,
+    @TenNguoiDung = 'Lê Minh Kha'
+
+EXEC Proc_ThemTaiKhoan
+	@TenDangNhap = 'thungan',
+	@MatKhau  = '222',
+	@Cap = 2,
+    @TenNguoiDung = 'Nguyễn Diệu Hương'
+
+EXEC Proc_ThemTaiKhoan
+	@TenDangNhap = 'qlkho',
+	@MatKhau  = '333',
+	@Cap = 3,
+    @TenNguoiDung = 'Ngô Quốc Đạt'
 
 EXEC Proc_ThemTaiKhoan
 	@TenDangNhap = 'admin2',
 	@MatKhau  = '222',
-	@Cap = 1
+	@Cap = 1,
+    @TenNguoiDung = 'Đỗ Huỳnh Gia Khang'
 
 EXEC Proc_ThemTaiKhoan
-	@TenDangNhap = 'admin3',
-	@MatKhau  = '333',
-	@Cap = 1
+	@TenDangNhap = 'thungan2',
+	@MatKhau  = '222',
+	@Cap = 2,
+    @TenNguoiDung = 'Trần Quý Thương'
 
-EXEC Proc_ThemTaiKhoan
-	@TenDangNhap = 'thungan',
-	@MatKhau  = '456',
-	@Cap = 2
-
-EXEC Proc_ThemTaiKhoan
-	@TenDangNhap = 'qlkho',
-	@MatKhau  = '789',
-	@Cap = 3
