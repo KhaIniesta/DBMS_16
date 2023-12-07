@@ -579,10 +579,10 @@ go
 
 --4.e Cập nhật hóa đơn
 create procedure Proc_CapNhatHoaDon
-	@MaHD nchar(15)
+	@MaHD nchar(15), @TongHD money
 as
 begin
-	update HoaDon set NgayInHD = GETDATE() where MaHD = @MaHD
+	update HoaDon set NgayInHD = GETDATE(), TongHD = @TongHD where MaHD = @MaHD
 end
 go
 
@@ -918,7 +918,7 @@ create view V_DTNam as
 select MaHD, Year(NgayInHD) Nam, Month(NgayInHD) Thang, TongHD from HoaDon
 go
 
--- 6. View hiển thị chi tiết sách trong chi tiết hóa đơn
+-- 6. View hiển thị chi tiết sách
 create view V_HienChiTietSach
 as
 	select top(99.99) percent Sach.MaSach, TacGia.TenTG, NhaXuatBan.TenNXB, Sach.TheLoai, Sach.SoLuongSach, Sach.Gia, Sach.TenSach, Sach.Anh
@@ -927,6 +927,7 @@ as
 	join NhaXuatBan on Sach.MaNXB = NhaXuatBan.MaNXB
 	order by Sach.TenSach
 go
+
 
 -- PHẦN INSERT DATA:==========================================================================
 use QLNhaSach
