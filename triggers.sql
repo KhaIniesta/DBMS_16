@@ -222,25 +222,6 @@ BEGIN
 	END
 END
 GO
-
--- 9. Kiểm tra số lượng từng loại sách trong kho có đủ để bán không
-CREATE TRIGGER TG_KTSachTrongKho
-ON ChiTietHoaDon
-FOR INSERT, UPDATE
-AS
-BEGIN
-	DECLARE @SoLuongSach INT, @SoLuongBan INT
-	
-	SELECT @SoLuongSach = Sach.SoLuongSach, @SoLuongBan = inserted.SoLuongBan
-	FROM Sach join inserted ON Sach.MaSach = inserted.MaSach
-
-	IF (@SoLuongSach<@SoLuongBan)
-		BEGIN
-			RAISERROR('Số lượng sách trong kho không đủ để bán ', 16, 1);
-			Rollback;
-		END;
-END;
-
 --. Trigger cap nhat so luong sach sau khi dat hang - xuat hoa don 
 
 -- 10. Sau khi đặt hàng - xuất hóa đơn

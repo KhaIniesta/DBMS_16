@@ -210,6 +210,18 @@ create procedure Proc_ThemSachCTHD
 	@SoLuongBan int
 as
 begin
+	DECLARE @SoLuongSach INT
+
+	SELECT @SoLuongSach = Sach.SoLuongSach
+    FROM Sach 
+	WHERE MaSach = @MaSach
+
+	IF (@SoLuongSach < @SoLuongBan)
+    BEGIN
+        RAISERROR('TG_SoLuongSauDatHang: Số lượng sách trong kho không đủ để bán', 16, 1);
+        RETURN
+    END
+
 	begin try
 	insert into ChiTietHoaDon(MaHD, MaSach, SoLuongBan) values(@MaHD, @MaSach, @SoLuongBan)
 	end try
@@ -221,15 +233,31 @@ begin
 end
 go
 
---5.d Xóa sách cho chi tiết hóa đơn
+--5.d Cập nhật sách cho chi tiết hóa đơn
 create procedure Proc_CapNhatSachCTHD
 	@MaHD nchar(15), 
 	@MaSach nchar(10), 
 	@SoLuongBan int
 as
 begin
+	DECLARE @SoLuongSach INT, @SoLuongBanCu INT
+
+	SELECT @SoLuongBanCu = SoLuongBan
+    FROM ChiTietHoaDon 
+	WHERE MaHD = @MaHD
+
+	SELECT @SoLuongSach = Sach.SoLuongSach
+    FROM Sach 
+	WHERE MaSach = @MaSach
+
+	IF (@SoLuongSach < @SoLuongBan - @SoLuongBanCu)
+    BEGIN
+        RAISERROR('Số lượng sau cập nhật: Số lượng sách trong kho không đủ để bán', 16, 1);
+        RETURN
+    END
+
 	begin try
-	update ChiTietHoaDon set SoLuongBan =  @SoLuongBan where MaHD = @MaHD and MaSach = @MaSach 
+		update ChiTietHoaDon set SoLuongBan =  @SoLuongBan where MaHD = @MaHD and MaSach = @MaSach 
 	end try
 	begin catch
 		declare @err NVARCHAR(MAX)
@@ -239,7 +267,7 @@ begin
 end
 go
 
---5.e Cập nhật sách cho chi tiết hóa đơn
+--5.e Xóa sách cho chi tiết hóa đơn
 create procedure Proc_XoaSachCTHD
 	@MaHD nchar(15),
 	@MaSach nchar(10)
@@ -392,3 +420,26 @@ BEGIN
 	DELETE ChiTietPhieuNhap 
 	WHERE MaPhieuNhap = @MaPhieuNhap 
 END
+GO
+
+CREATE PROCEDURE Proc_TimKiemSach
+    @TuKhoa NVARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Chuyển đổi @TuKhoa sang chữ thường
+    DECLARE @TuKhoaLowerCase NVARCHAR(100);
+    SET @TuKhoaLowerCase = LOWER(@TuKhoa);
+
+    SELECT *
+    FROM Sach
+    WHERE
+        -- Tìm kiếm theo tên sách có hoặc không dấu (chuyển sang chữ thường)
+        (LOWER(TenSach) LIKE '%' + @TuKhoaLowerCase + '%' COLLATE Vietnamese_CI_AI) OR
+        (LOWER(TenSach) LIKE '%' + @TuKhoaLowerCase + '%' COLLATE SQL_Latin1_General_CP1253_CI_AI) OR
+        -- Tìm kiếm theo tên tác giả có hoặc không dấu (chuyển sang chữ thường)
+        EXISTS (SELECT 1 FROM TacGia WHERE Sach.MaTG = TacGia.MaTG AND (LOWER(TacGia.TenTG) LIKE '%' + @TuKhoaLowerCase + '%' COLLATE Vietnamese_CI_AI OR LOWER(TacGia.TenTG) LIKE '%' + @TuKhoaLowerCase + '%' COLLATE SQL_Latin1_General_CP1253_CI_AI)) OR
+        -- Tìm kiếm theo tên nhà xuất bản có hoặc không dấu (chuyển sang chữ thường)
+        EXISTS (SELECT 1 FROM NhaXuatBan WHERE Sach.MaNXB = NhaXuatBan.MaNXB AND (LOWER(NhaXuatBan.TenNXB) LIKE '%' + @TuKhoaLowerCase + '%' COLLATE Vietnamese_CI_AI OR LOWER(NhaXuatBan.TenNXB) LIKE '%' + @TuKhoaLowerCase + '%' COLLATE SQL_Latin1_General_CP1253_CI_AI));
+END;
