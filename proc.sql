@@ -233,7 +233,7 @@ begin
 end
 go
 
---5.d Xóa sách cho chi tiết hóa đơn
+--5.d Cập nhật sách cho chi tiết hóa đơn
 create procedure Proc_CapNhatSachCTHD
 	@MaHD nchar(15), 
 	@MaSach nchar(10), 
@@ -267,7 +267,7 @@ begin
 end
 go
 
---5.e Cập nhật sách cho chi tiết hóa đơn
+--5.e Xóa sách cho chi tiết hóa đơn
 create procedure Proc_XoaSachCTHD
 	@MaHD nchar(15),
 	@MaSach nchar(10)

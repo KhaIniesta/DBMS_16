@@ -280,25 +280,6 @@ BEGIN
 	END
 END
 GO
-
--- 9. Kiểm tra số lượng từng loại sách trong kho có đủ để bán không
-CREATE TRIGGER TG_KTSachTrongKho
-ON ChiTietHoaDon
-FOR INSERT, UPDATE
-AS
-BEGIN
-	DECLARE @SoLuongSach INT, @SoLuongBan INT
-	
-	SELECT @SoLuongSach = Sach.SoLuongSach, @SoLuongBan = inserted.SoLuongBan
-	FROM Sach join inserted ON Sach.MaSach = inserted.MaSach
-
-	IF (@SoLuongSach<@SoLuongBan)
-		BEGIN
-			RAISERROR('Số lượng sách trong kho không đủ để bán ', 16, 1);
-			Rollback;
-		END;
-END;
-
 --. Trigger cap nhat so luong sach sau khi dat hang - xuat hoa don 
 
 -- 10. Sau khi đặt hàng - xuất hóa đơn
@@ -643,6 +624,18 @@ create procedure Proc_ThemSachCTHD
 	@SoLuongBan int
 as
 begin
+	DECLARE @SoLuongSach INT
+
+	SELECT @SoLuongSach = Sach.SoLuongSach
+    FROM Sach 
+	WHERE MaSach = @MaSach
+
+	IF (@SoLuongSach < @SoLuongBan)
+    BEGIN
+        RAISERROR('TG_SoLuongSauDatHang: Số lượng sách trong kho không đủ để bán', 16, 1);
+        RETURN
+    END
+
 	begin try
 	insert into ChiTietHoaDon(MaHD, MaSach, SoLuongBan) values(@MaHD, @MaSach, @SoLuongBan)
 	end try
@@ -654,15 +647,31 @@ begin
 end
 go
 
---5.d Xóa sách cho chi tiết hóa đơn
+--5.d Cập nhật sách cho chi tiết hóa đơn
 create procedure Proc_CapNhatSachCTHD
 	@MaHD nchar(15), 
 	@MaSach nchar(10), 
 	@SoLuongBan int
 as
 begin
+	DECLARE @SoLuongSach INT, @SoLuongBanCu INT
+
+	SELECT @SoLuongBanCu = SoLuongBan
+    FROM ChiTietHoaDon 
+	WHERE MaHD = @MaHD
+
+	SELECT @SoLuongSach = Sach.SoLuongSach
+    FROM Sach 
+	WHERE MaSach = @MaSach
+
+	IF (@SoLuongSach < @SoLuongBan - @SoLuongBanCu)
+    BEGIN
+        RAISERROR('Số lượng sau cập nhật: Số lượng sách trong kho không đủ để bán', 16, 1);
+        RETURN
+    END
+
 	begin try
-	update ChiTietHoaDon set SoLuongBan =  @SoLuongBan where MaHD = @MaHD and MaSach = @MaSach 
+		update ChiTietHoaDon set SoLuongBan =  @SoLuongBan where MaHD = @MaHD and MaSach = @MaSach 
 	end try
 	begin catch
 		declare @err NVARCHAR(MAX)
@@ -672,7 +681,8 @@ begin
 end
 go
 
---5.e Cập nhật sách cho chi tiết hóa đơn
+
+--5.e Xóa sách cho chi tiết hóa đơn
 create procedure Proc_XoaSachCTHD
 	@MaHD nchar(15),
 	@MaSach nchar(10)
