@@ -95,7 +95,7 @@ AFTER INSERT, UPDATE
 AS
 BEGIN
     -- Kiểm tra lỗi nhập thiếu thông tin khi thêm hoặc sửa
-    IF EXISTS (SELECT * FROM inserted WHERE TRIM(TenTG) = '' OR TRIM(LienHe) = '')
+    IF EXISTS (SELECT * FROM inserted WHERE TRIM(TenTG) = '' OR TRIM(MaTG) = '')
     BEGIN
         RAISERROR('Thông tin không đủ khi thêm, sửa', 16, 1)
         ROLLBACK
@@ -414,6 +414,20 @@ BEGIN
         
         RAISERROR('MaTG đã tồn tại!', 16, 1);
     END
+END;
+go
+
+--17. Trigger cập nhật MaNXB bảng Sach khi sửa bên bảng Tacgia
+CREATE TRIGGER trg_UpdateMaNXB
+ON TacGia
+AFTER UPDATE
+AS
+BEGIN
+    UPDATE Sach
+    SET MaNXB = i.MaNXB
+    FROM Sach s
+    INNER JOIN inserted i ON s.MaTG = i.MaTG
+    WHERE i.MaNXB IS NOT NULL;
 END;
 go
 
