@@ -7,14 +7,14 @@ CREATE TABLE NhaXuatBan (
     MaNXB NCHAR(10) PRIMARY KEY,
     TenNXB NVARCHAR(50) NOT NULL,
     DiaChiNXB NVARCHAR(100),
-    LienHe NCHAR(50) NOT NULL
+    LienHe NVARCHAR(50) NOT NULL
 )
 go
 CREATE TABLE TacGia(
     MaTG NCHAR(10) PRIMARY KEY, 
     MaNXB NCHAR(10) REFERENCES NhaXuatBan(MaNXB) ON DELETE SET NULL, 
     TenTG NVARCHAR(50) NOT NULL, 
-    LienHe NCHAR(15)
+    LienHe NVARCHAR(50)
 )
 go
 CREATE TABLE Sach(
@@ -692,7 +692,7 @@ CREATE PROCEDURE Proc_ThemNhaXuatBan
 	@MaNXB nchar(10),
 	@TenNXB nvarchar(50),
 	@DiaChiNXB nvarchar(100),
-	@LienHe nvarchar(15)
+	@LienHe nvarchar(50)
 	
 AS
 BEGIN
@@ -726,7 +726,7 @@ CREATE PROCEDURE Proc_SuaNhaXuatBan
 	@MaNXB nchar(10),
 	@TenNXB nvarchar(50),
 	@DiaChiNXB nvarchar(100),
-	@LienHe nvarchar(15)
+	@LienHe nvarchar(50)
 	
 AS
 BEGIN
@@ -759,7 +759,7 @@ CREATE PROCEDURE ThemTacGia
     @MaTG NCHAR(10),
     @MaNXB NCHAR(10),
     @TenTG NVARCHAR(50),
-    @LienHe NCHAR(15)
+    @LienHe NVARCHAR(50)
 AS
 BEGIN
     INSERT INTO TacGia (MaTG, MaNXB, TenTG, LienHe)
@@ -772,7 +772,7 @@ CREATE PROCEDURE CapNhatTacGia
     @MaTG NCHAR(10),
     @MaNXB NCHAR(10),
     @TenTG NVARCHAR(50),
-    @LienHe NCHAR(15)
+    @LienHe NVARCHAR(15)
 AS
 BEGIN
     UPDATE TacGia
