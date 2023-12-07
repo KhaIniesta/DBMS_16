@@ -210,6 +210,18 @@ create procedure Proc_ThemSachCTHD
 	@SoLuongBan int
 as
 begin
+	DECLARE @SoLuongSach INT
+
+	SELECT @SoLuongSach = Sach.SoLuongSach
+    FROM Sach 
+	WHERE MaSach = @MaSach
+
+	IF (@SoLuongSach < @SoLuongBan)
+    BEGIN
+        RAISERROR('TG_SoLuongSauDatHang: Số lượng sách trong kho không đủ để bán', 16, 1);
+        RETURN
+    END
+
 	begin try
 	insert into ChiTietHoaDon(MaHD, MaSach, SoLuongBan) values(@MaHD, @MaSach, @SoLuongBan)
 	end try
@@ -228,8 +240,24 @@ create procedure Proc_CapNhatSachCTHD
 	@SoLuongBan int
 as
 begin
+	DECLARE @SoLuongSach INT, @SoLuongBanCu INT
+
+	SELECT @SoLuongBanCu = SoLuongBan
+    FROM ChiTietHoaDon 
+	WHERE MaHD = @MaHD
+
+	SELECT @SoLuongSach = Sach.SoLuongSach
+    FROM Sach 
+	WHERE MaSach = @MaSach
+
+	IF (@SoLuongSach < @SoLuongBan - @SoLuongBanCu)
+    BEGIN
+        RAISERROR('Số lượng sau cập nhật: Số lượng sách trong kho không đủ để bán', 16, 1);
+        RETURN
+    END
+
 	begin try
-	update ChiTietHoaDon set SoLuongBan =  @SoLuongBan where MaHD = @MaHD and MaSach = @MaSach 
+		update ChiTietHoaDon set SoLuongBan =  @SoLuongBan where MaHD = @MaHD and MaSach = @MaSach 
 	end try
 	begin catch
 		declare @err NVARCHAR(MAX)
