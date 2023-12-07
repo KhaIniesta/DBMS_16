@@ -579,10 +579,10 @@ go
 
 --4.e Cập nhật hóa đơn
 create procedure Proc_CapNhatHoaDon
-	@MaHD nchar(15)
+	@MaHD nchar(15), @TongHD money
 as
 begin
-	update HoaDon set NgayInHD = GETDATE() where MaHD = @MaHD
+	update HoaDon set NgayInHD = GETDATE(), TongHD = @TongHD where MaHD = @MaHD
 end
 go
 
