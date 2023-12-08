@@ -86,22 +86,8 @@ BEGIN
 		RETURN
 	END
 END
-GO
 
--- 2. Trigger bắt lỗi nhập thiếu thông tin khi thêm, sửa, xoá cho bảng TacGia
-CREATE TRIGGER TG_Trigger_TacGia_InsUpdDel
-ON TacGia
-AFTER INSERT, UPDATE
-AS
-BEGIN
-    -- Kiểm tra lỗi nhập thiếu thông tin khi thêm hoặc sửa
-    IF EXISTS (SELECT * FROM inserted WHERE TRIM(TenTG) = '' OR TRIM(MaTG) = '')
-    BEGIN
-        RAISERROR('Thông tin không đủ khi thêm, sửa', 16, 1)
-        ROLLBACK
-        RETURN
-    END
-END
+
 GO
 
 -- 3. Trigger 
@@ -796,7 +782,7 @@ CREATE PROCEDURE CapNhatTacGia
     @MaTG NCHAR(10),
     @MaNXB NCHAR(10),
     @TenTG NVARCHAR(50),
-    @LienHe NVARCHAR(15)
+    @LienHe NVARCHAR(50)
 AS
 BEGIN
     UPDATE TacGia
