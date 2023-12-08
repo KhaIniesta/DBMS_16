@@ -1206,9 +1206,9 @@ BEGIN
     -- Cập nhật giá trị cột ChucVu dựa trên giá trị của cột Cap
     UPDATE TaiKhoan
     SET ChucVu = CASE 
-                    WHEN I.Cap = 1 THEN 'Admin'
-                    WHEN I.Cap = 2 THEN 'Nhân viên thu ngân'
-                    ELSE 'Quản lí kho' -- Giữ nguyên giá trị nếu Cap không phải 1 hoặc 2
+                    WHEN I.Cap = 1 THEN N'Admin'
+                    WHEN I.Cap = 2 THEN N'Nhân viên thu ngân'
+                    WHEN I.Cap = 3 THEN N'Quản lí kho' -- Giữ nguyên giá trị nếu Cap không phải 1 hoặc 2
                 END
     FROM TaiKhoan T
     INNER JOIN inserted I ON T.TenDangNhap = I.TenDangNhap;
