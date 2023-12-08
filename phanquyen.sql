@@ -169,8 +169,8 @@ BEGIN
     END
 	ELSE
 	BEGIN
-        RAISERROR ('Tài khoản muốn xóa đang được đăng nhập!', 16, 1);
-        RETURN; 
+        SET @sqlString = 'KILL ' + Convert(NVARCHAR(20), @sessionID)
+        exec(@sqlString)
 	END
 
 END
@@ -187,7 +187,7 @@ BEGIN
     END TRY
     BEGIN CATCH
         DECLARE @err nvarchar(MAX)
-        SELECT @err = ERROR_MESSAGE()
+        SELECT @err = 'Tài khoản này đang đăng nhập'
         RAISERROR(@err,16,1)
         ROLLBACK
     END CATCH
